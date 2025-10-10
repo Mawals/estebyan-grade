@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>استبيان الصف الأول</title>
+<style>
+  :root{--bg:#FFFDF8;--card:#fff;--primary:#6FD3FF;--accent:#FFE380;--success:#75E0A3;--text:#2b2b2b}
+  *{box-sizing:border-box} body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Arial,sans-serif;background:var(--bg);color:var(--text)}
+  .container{max-width:980px;margin:24px auto;padding:16px}
+  header{display:flex;align-items:center;justify-content:space-between;gap:12px;background:linear-gradient(135deg,var(--primary),#FFB3D9);color:#fff;padding:18px 20px;border-radius:20px;box-shadow:0 10px 30px rgba(0,0,0,.08)}
+  .title{font-size:clamp(20px,3.5vw,32px);font-weight:800}
+  .card{background:var(--card);border-radius:20px;padding:18px;margin-top:16px;box-shadow:0 8px 22px rgba(0,0,0,.06);border:3px dashed #F9E3A8}
+  .question{display:grid;grid-template-columns:1fr auto;align-items:center;gap:12px;padding:14px 12px;border-radius:18px;background:#FCFDFF;border:1px solid #EFF3FF;margin:10px 0}
+  .q-text{font-size:20px;font-weight:800;display:flex;align-items:center;gap:10px}
+  .q-number{display:inline-grid;place-items:center;width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,var(--accent),#FFB3D9);color:#222;font-weight:900}
+  .speak-btn{display:inline-flex;align-items:center;gap:8px;border:none;cursor:pointer;background:var(--primary);color:#fff;padding:10px 12px;border-radius:999px;font-weight:800;box-shadow:0 6px 0 #2aa6db}
+  .options{display:flex;flex-wrap:wrap;gap:10px;padding-inline:6px;margin-top:8px}
+  .opt{position:relative} .opt input{position:absolute;inset:0;opacity:0}
+  .chip{display:inline-flex;align-items:center;gap:8px;padding:10px 14px;border-radius:999px;background:#F4F9FF;border:2px solid #DCEEFF;font-weight:800;cursor:pointer}
+  .opt input:checked + .chip{background:#E9FFF0;border-color:var(--success);box-shadow:0 4px 0 #56b338;transform:translateY(-1px)}
+  .actions{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;margin:18px 0 8px}
+  .btn{border:none;cursor:pointer;font-weight:900;padding:14px 18px;border-radius:14px;box-shadow:0 8px 0 rgba(0,0,0,.12);color:#222}
+  .btn-primary{background:linear-gradient(135deg,var(--accent),#FFF0A6)}
+  .btn-reset{background:linear-gradient(135deg,#FFCECE,#FF9D9D)}
+  .footer-note{text-align:center;font-weight:700;color:#6b7280;margin-top:8px}
+  @media (max-width:640px){.question{grid-template-columns:1fr}.speak-btn{justify-self:start}}
+</style>
+</head>
+<body>
+<div class="container">
+  <header><div class="title">✨ <b>مرحبًا يا أبطال الصف الأول</b> ✨<br>🧠 <i>اضغط على السماعة لسماع السؤال — تعلّم ممتع!</i> 🎮</div></header>
+  <form id="quizForm" class="card">
+    <div id="questions"></div>
+    <div class="actions">
+      <button type="button" class="btn btn-primary" id="sendBtn">إرسال</button>
+      <button type="reset" class="btn btn-reset">إعادة</button>
+    </div>
+    <div id="status" class="footer-note">💡 يرجى الإجابة على كل الأسئلة ثم الضغط على إرسال.</div>
+  </form>
+</div>
+
+<script>
+  // ✅ رابط الويب-آب الصحيح (Google Apps Script)
+  const SHEET_ENDPOINT = "https://script.google.com/macros/s/AKfycbw_8WBMPnMkgn0her2lkzQ12Y5O-88Qi-mIroYj3grAlbYA5NQS3ZuJvgUpMSKGIYIyNQ/exec";
+
+  // --- 1) بيانات الأسئلة ---
+  const data = [
+    {q:" هَلْ تُحِبُّ حِصَّةَ اللُّغَةِ الْإِنْجِلِيزِيَّةِ عِنْدَمَا نَسْتَخْدِمُ الشَّاشَةَ التَّفَاعُلِيَّةَ؟",opts:["أحبها كثيرًا","أحيانًا","لا أحبها"]},
+    {q:" هَلْ تَشْعُرُ بِالسَّعَادَةِ عِنْدَمَا تَتَعَلَّمُ وَأَنْتَ تَلْعَبُ؟",opts:["دائمًا","أحيانًا","نادرًا"]},
+    {q:" هَلِ الْأَلْعَابُ تُسَاعِدُكَ عَلَى حِفْظِ الْكَلِمَاتِ بِسُرْعَةٍ؟",opts:["نعم كثيرًا","أحيانًا","لا"]},
+    {q:" هَلْ تَسْتَمْتِعُ عِنْدَمَا تَسْمَعُ الْكَلِمَاتِ الْإِنْجِلِيزِيَّةَ وَتُكَرِّرُهَا بِصَوْتِكَ؟",opts:["ممتع جدًا","عادي","غير ممتع"]},
+    {q:" هَلْ تُحِبُّ الْعَمَلَ مَعَ أَصْدِقَائِكَ فِي الْأَلْعَابِ الْجَمَاعِيَّةِ؟",opts:["أحب كثيرًا","أحيانًا","لا أحب"]},
+    {q:" هَلْ تَتَعَلَّمُ بِسُرْعَةٍ عِنْدَمَا تَلْمَسُ الصُّوَرَ وَالْكَلِمَاتِ عَلَى الشَّاشَةِ؟",opts:["صحيح جدًا","أحيانًا","لا"]},
+    {q:" هَلْ تَسْتَطِيعُ تَذَكُّرَ الْكَلِمَاتِ الَّتِي تَعَلَّمْتَهَا مِنْ خِلَالِ اللَّعِبِ؟",opts:["بسهولة","أحيانًا","بصعوبة"]},
+    {q:" هَلْ تَشْعُرُ بِالْحَمَاسِ عِنْدَمَا تُشَارِكُ فِي اللُّعْبَةِ أَمَامَ زُمَلَائِكَ؟",opts:["دائمًا","أحيانًا","نادرًا"]},
+    {q:" هَلْ تُحِبُّ أَنْ تَكُونَ كُلُّ حِصَصِ اللُّغَةِ الْإِنْجِلِيزِيَّةِ بِهَذِهِ الطَّرِيقَةِ الْمُمْتِعَةِ؟",opts:["نعم بالتأكيد","ربما","لا"]},
+    {q:" هَلِ التَّعَلُّمُ بِالْأَلْعَابِ يَجْعَلُ اللُّغَةَ الْإِنْجِلِيزِيَّةَ أَسْهَلَ وَأَجْمَلَ؟",opts:["صحيح جدًا","أحيانًا","لا أشعر بذلك"]}
+  ];
+
+  // --- 2) توليد الأسئلة ---
+  function render(){
+    const el = document.getElementById('questions'); el.innerHTML='';
+    data.forEach((item,idx)=>{
+      const qId = `q${idx+1}`;
+      const wrap = document.createElement('div'); wrap.className='question';
+      wrap.innerHTML = `
+        <div class="q-text"><span class="q-number">${idx+1}</span><span id="${qId}-label">${item.q}</span></div>
+        <button type="button" class="speak-btn" id="${qId}-btn">🔊 سماعة</button>
+        <div class="options" role="radiogroup" aria-labelledby="${qId}-label">
+          ${item.opts.map(opt=>`
+            <label class="opt">
+              <input type="radio" name="${qId}" value="${opt}" required />
+              <span class="chip">${opt}</span>
+            </label>
+          `).join('')}
+        </div>`;
+      el.appendChild(wrap);
+    });
+    // أزرار الصوت
+    data.forEach((_,i)=>{
+      const id = `q${i+1}`;
+      document.getElementById(`${id}-btn`).addEventListener('click',()=>{
+        const t = document.getElementById(`${id}-label`).innerText;
+        speak(t);
+      });
+    });
+  }
+
+  // --- 3) قراءة النص ---
+  let cachedVoices=[];
+  function loadVoices(){function set(){cachedVoices=speechSynthesis.getVoices()} set(); speechSynthesis.onvoiceschanged=set;}
+  function speak(text){if(!('speechSynthesis' in window)) return; speechSynthesis.cancel(); const u=new SpeechSynthesisUtterance(text);u.lang='ar-SA';u.rate=.95;u.pitch=1.0;const ar=cachedVoices.filter(v=>(v.lang||'').toLowerCase().startsWith('ar'));if(ar.length)u.voice=ar[0];speechSynthesis.speak(u);}
+
+  // --- 4) تجميع وإرسال ---
+  function collectForSheet(){
+    const rows=[]; const stamp=new Date().toLocaleString('ar-EG');
+    data.forEach((item,i)=>{
+      const name=`q${i+1}`; const ans=document.querySelector(`input[name="${name}"]:checked`);
+      rows.push({q:item.q, a: ans? ans.value : ''});
+    });
+    return {stamp, ua:navigator.userAgent||'', data:rows};
+  }
+
+  async function sendToSheet(){
+    const status=document.getElementById('status');
+    const btn=document.getElementById('sendBtn');
+    const form=document.getElementById('quizForm');
+    btn.disabled=true; status.textContent="⏳ جاري الإرسال...";
+
+    // تحقق أن كل الأسئلة مُجاب عليها
+    for(let i=1;i<=data.length;i++){ if(!document.querySelector(`input[name="q${i}"]:checked`)){ status.textContent="⚠️ رجاءً أجب على جميع الأسئلة قبل الإرسال."; btn.disabled=false; return; } }
+
+    try{
+      const payload=collectForSheet();
+      const res=await fetch(SHEET_ENDPOINT,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)});
+      if(!res.ok){ status.textContent="❌ تعذّر الحفظ: HTTP "+res.status+" - "+res.statusText; btn.disabled=false; return; }
+      let ok=false; try{ const j=await res.json(); ok=!!j.ok; }catch(_ ){ ok=true; } // بعض النشرات ترجع نصًا فقط
+      if(ok){ status.textContent="✅ تم الإرسال وحُفظ في الجدول."; form.reset(); window.scrollTo({top:0,behavior:'smooth'}); }
+      else { status.textContent="❌ لم يؤكّد الخادم الحفظ. افحص إعدادات النشر."; }
+    }catch(err){
+      // fallback في حال فتح الملف محليًا file://
+      try{ await fetch(SHEET_ENDPOINT,{method:"POST",mode:"no-cors",body:JSON.stringify(collectForSheet())}); status.textContent="✅ تم الإرسال (وضع توافق). افحص الجدول للتأكد من وصول الرد."; form.reset(); }
+      catch(e2){ status.textContent="❌ تعذّر الاتصال: "+String(err); }
+    }finally{ btn.disabled=false; }
+  }
+
+  // --- 5) تهيئة ---
+  function init(){ render(); loadVoices(); document.getElementById('sendBtn').addEventListener('click',sendToSheet); }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',init); else init();
+</script>
+</body>
+</html>
