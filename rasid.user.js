@@ -4,7 +4,7 @@
 // @author       سيف جمال المعولي
 // @updateURL    https://mawals.github.io/estebyan-grade/rasid.user.js
 // @downloadURL  https://mawals.github.io/estebyan-grade/rasid.user.js
-// @version      3.0
+// @version      3.1
 // @description  ينقل العبارات الوصفية من ملف الإكسل إلى صفحة «إدخال الدرجات» في البوابة التعليمية بمطابقة أسماء الطلاب تلقائيًا، مع تقرير بالطلاب غير المطابقين
 // @match        *://*.moe.gov.om/*
 // @include      /^https?:\/\/([^\/]*\.)?moe\.gov\.om(:\d+)?\/.*$/
@@ -152,7 +152,26 @@
         if (li >= 0 && Math.abs(li - si) === 1) sh = t;
       }
     });
-    if (g && sh) return names.find(n => n.replace(/\s/g, '') === g + '.' + sh) || null;
+    if (g && sh) {
+      const want = g + '.' + sh;
+      return names.find(n => wb && classOf(n, wb.sheets[n], wb.fileName, names.length) === want) || null;
+    }
+    return null;
+  }
+  // معرفة الشعبة لكل ورقة: من اسم الورقة (8.2) ← أو من داخلها (Class: 8.2) ← أو من اسم الملف إذا كان فيه ورقة واحدة
+  function classOf(sheetName, sh, fileName, nSheets) {
+    const pick = t => { const m = String(t || '').match(/(?:^|[^\d])(\d{1,2})\s*[.\-_\/]\s*(\d{1,2})(?![\d])/); return m && +m[1] >= 1 && +m[1] <= 12 ? (+m[1]) + '.' + (+m[2]) : null; };
+    const byName = String(sheetName).replace(/\s/g, '').match(/^(\d{1,2})[.\-_\/](\d{1,2})$/);
+    if (byName) return (+byName[1]) + '.' + (+byName[2]);
+    if (sh && sh.rows) {
+      for (let r = 0; r < Math.min(sh.rows.length, 10); r++) {
+        for (const v of sh.rows[r] || []) {
+          const t = String(v || '');
+          if (/class|الصف|الشعب/i.test(t)) { const c = pick(t.replace(/\b(19|20)\d{2}\b/g, ' ')); if (c) return c; }
+        }
+      }
+    }
+    if (nSheets === 1) return pick(String(fileName || '').replace(/\.\w+$/, '').replace(/(19|20)\d{2}/g, ' '));
     return null;
   }
 
@@ -242,7 +261,7 @@
         <div class="rz-lbl"><span>📄 ملف الإكسل</span><span id="rz-fcount"></span></div>
         <div class="rz-row"><select id="rz-files"></select><button data-a="del" title="حذف الملف المختار">🗑 حذف</button></div>
         <button data-a="new">➕ رفع ملف إكسل جديد</button>
-        <input type="file" id="rz-file" accept=".xlsx,.xls,.xlsm,.csv" style="display:none">
+        <input type="file" id="rz-file" accept=".xlsx,.xls,.xlsm,.csv" multiple style="display:none">
       </div>
       <div class="rz-box">
         <div class="rz-lbl"><span>📑 الورقة (الشعبة)</span><span id="rz-auto"></span></div>
@@ -333,33 +352,46 @@
     fillFiles();
     const s = $('rz-sheet'); s.innerHTML = '';
     if (!wb) { $('rz-name').innerHTML = ''; $('rz-phrase').innerHTML = ''; $('rz-sinfo').textContent = ''; $('rz-auto').textContent = ''; return; }
-    const names = Object.keys(wb.sheets);
+    let names = Object.keys(wb.sheets);
+    let g = guessSheet(names);
+    if (!g) {
+      // الشعبة المعروضة في ملف آخر؟ ننتقل إليه تلقائيًا
+      for (const fn of Object.keys(store.files)) {
+        if (fn === store.current) continue;
+        const keep = wb; wb = store.files[fn];
+        const x = guessSheet(Object.keys(wb.sheets));
+        if (x) { g = x; store.current = fn; names = Object.keys(wb.sheets); fillFiles(); break; }
+        wb = keep;
+      }
+    }
     names.forEach(n => s.add(new Option(n, n)));
-    const g = guessSheet(names);
     $('rz-auto').textContent = g ? '✨ اختيرت تلقائيًا' : '';
     s.value = g || (names.includes(wb.lastSheet) ? wb.lastSheet : names[0]);
     fillCols(s.value);
   }
   panel.querySelector('[data-a=new]').onclick = () => $('rz-file').click();
-  $('rz-file').onchange = e => {
-    const f = e.target.files[0]; if (!f) return;
-    const rd = new FileReader();
-    rd.onload = ev => {
+  const readFile = f => new Promise((res, rej) => { const rd = new FileReader(); rd.onload = ev => res(ev.target.result); rd.onerror = rej; rd.readAsArrayBuffer(f); });
+  $('rz-file').onchange = async e => {
+    const list = [...e.target.files]; if (!list.length) return;
+    const done = [], bad = [];
+    for (const f of list) {
       try {
-        const book = XLSX.read(new Uint8Array(ev.target.result), { type: 'array' });
-        wb = { fileName: f.name, added: today(), sheets: {} };
+        const book = XLSX.read(new Uint8Array(await readFile(f)), { type: 'array' });
+        const w = { fileName: f.name, added: today(), sheets: {} };
         book.SheetNames.forEach(n => {
           const rows = XLSX.utils.sheet_to_json(book.Sheets[n], { header: 1, defval: '', raw: false });
-          wb.sheets[n] = { rows, info: analyseSheet(rows) };
+          if (!rows.length) return;
+          w.sheets[n] = { rows, info: analyseSheet(rows) };
         });
-        store.files[f.name] = wb; store.current = f.name;
-        if (!saveStore()) status('⚠️ الملف يعمل الآن لكن لم يُحفظ — احذف ملفات قديمة.');
-        else status(`✅ تم رفع «${f.name}» (${book.SheetNames.length} ورقة).`);
-        fillSheets();
-      } catch (err) { status('❌ تعذّرت قراءة الملف: ' + err.message); }
-      e.target.value = '';
-    };
-    rd.readAsArrayBuffer(f);
+        store.files[f.name] = w; store.current = f.name; wb = w;
+        const cls = Object.keys(w.sheets).map(n => classOf(n, w.sheets[n], f.name, Object.keys(w.sheets).length)).filter(Boolean);
+        done.push(`«${f.name}»${cls.length ? ' ← ' + cls.join('، ') : ' ← ⚠️ لم تُعرف الشعبة'}`);
+      } catch (err) { bad.push(`«${f.name}»: ${err.message}`); }
+    }
+    const ok = saveStore();
+    status(`${done.length ? '✅ تم رفع الملفات (' + done.length + '):\n' + done.join('\n') : ''}${bad.length ? '\n❌ تعذّرت قراءة:\n' + bad.join('\n') : ''}${ok ? '' : '\n⚠️ لم تُحفظ الملفات لكثرتها — احذف ملفات قديمة.'}`);
+    fillSheets();
+    e.target.value = '';
   };
   $('rz-files').onchange = () => { store.current = $('rz-files').value; wb = store.files[store.current] || null; saveStore(); fillSheets(); };
   panel.querySelector('[data-a=del]').onclick = () => {
@@ -637,7 +669,8 @@ ${done ? '✔ رُصدت' : '✔ مطابقة تامة'}: ${c.ok}${c.fuzzy ? `\n
     const order = [store.current, ...Object.keys(store.files).filter(n => n !== store.current)];
     for (const fn of order) {
       const f = store.files[fn]; if (!f) continue;
-      const sn = Object.keys(f.sheets).find(n => n.replace(/\s/g, '') === want);
+      const names = Object.keys(f.sheets);
+      const sn = names.find(n => classOf(n, f.sheets[n], fn, names.length) === want);
       if (sn) return { file: fn, sheetName: sn, sh: f.sheets[sn] };
     }
     return null;
@@ -744,7 +777,7 @@ ${done ? '✔ رُصدت' : '✔ مطابقة تامة'}: ${c.ok}${c.fuzzy ? `\n
 
         const found = findSheetFor(g.text, sec.text);
         if (!found) {
-          logA(s, { grade: g.text, sec: sec.text, status: '⚠️ لا توجد ورقة', note: `لا توجد ورقة باسم ${gradeNum(g.text)}.${(sec.text.match(/\d+/) || [''])[0]} في ملفات الإكسل` });
+          logA(s, { grade: g.text, sec: sec.text, status: '⚠️ لا توجد ورقة', note: `لا يوجد ملف أو ورقة للشعبة ${gradeNum(g.text)}.${(sec.text.match(/\d+/) || [''])[0]} في الملفات المرفوعة` });
           nextSec(s); continue;
         }
 
