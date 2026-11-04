@@ -4,7 +4,7 @@
 // @author       سيف جمال المعولي
 // @updateURL    https://mawals.github.io/estebyan-grade/rasid.user.js
 // @downloadURL  https://mawals.github.io/estebyan-grade/rasid.user.js
-// @version      2.1
+// @version      3.0
 // @description  ينقل العبارات الوصفية من ملف الإكسل إلى صفحة «إدخال الدرجات» في البوابة التعليمية بمطابقة أسماء الطلاب تلقائيًا، مع تقرير بالطلاب غير المطابقين
 // @match        *://*.moe.gov.om/*
 // @include      /^https?:\/\/([^\/]*\.)?moe\.gov\.om(:\d+)?\/.*$/
@@ -13,12 +13,27 @@
 // @grant        GM_getValue
 // @grant        GM_deleteValue
 // @grant        GM_notification
-// @run-at       document-idle
+// @run-at       document-start
 // ==/UserScript==
 
 (function () {
   'use strict';
   if (window.top !== window.self) return;
+
+  // أثناء الرصد التلقائي: نمنع رسائل البوابة (تم الحفظ...) من إيقاف العمل، وتُحفظ الرسالة للتقرير
+  try {
+    const a = typeof GM_getValue === 'function' ? GM_getValue('rz_auto', null) : JSON.parse(localStorage.getItem('rz_auto') || 'null');
+    if (a) {
+      const sc = document.createElement('script');
+      sc.textContent = "if(!window.__rzA){window.__rzA=[window.alert,window.confirm];window.alert=function(m){document.documentElement.setAttribute('data-rz-msg',String(m))};window.confirm=function(m){document.documentElement.setAttribute('data-rz-msg',String(m));return true};}";
+      const put = () => { const r = document.head || document.documentElement; if (!r) return false; r.appendChild(sc); sc.remove(); return true; };
+      if (!put()) { const mo = new MutationObserver(() => { if (put()) mo.disconnect(); }); mo.observe(document, { childList: true, subtree: true }); }
+    }
+  } catch (e) {}
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => setTimeout(main, 300));
+  else main();
+
+  function main() {
 
   // يعمل فقط في صفحة إدخال الدرجات
   const isMarksPage = () => /MarksDataEntry/i.test(location.href) ||
@@ -193,6 +208,8 @@
       #rz-panel button[data-a=go]:hover{filter:brightness(1.08);transform:translateY(-1px)}
       #rz-panel button[data-a=del]{width:auto;flex:0 0 auto;margin:0;padding:5px 10px;background:rgba(225,29,72,.1);color:var(--stop);border-color:rgba(225,29,72,.3);font-size:11.5px}
       #rz-panel button[data-a=new]{margin:6px 0 0;padding:6px;font-size:11.5px;border-style:dashed}
+      #rz-panel button.rz-all{background:var(--soft);border:1.5px solid var(--a1);color:var(--hi);font-weight:900}
+      #rz-panel button.rz-stop{background:rgba(225,29,72,.1);color:var(--stop);border-color:rgba(225,29,72,.3)}
       .rz-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:5px 0}
       .rz-grid button{margin:0 !important;padding:7.5px 8px !important;font-size:11.5px !important}
       #rz-panel button[data-a=diag]{background:transparent;color:var(--muted);border-style:dashed;padding:6px;font-size:11.5px}
@@ -241,7 +258,9 @@
         <label class="rz-chk"><input type="checkbox" id="rz-fuzzy"> مطابقة تقريبية للأسماء المختلفة قليلًا</label>
         <label class="rz-chk"><input type="checkbox" id="rz-autosave"> الضغط على «حفظ» تلقائيًا بعد الرصد</label>
       </div>
-      <button data-a="go">▶️ رصد العبارات</button>
+      <button data-a="go">▶️ رصد العبارات (هذه الشعبة)</button>
+      <button data-a="all" class="rz-all">🔁 رصد وحفظ كل الصفوف والشعب</button>
+      <button data-a="stopall" class="rz-stop" style="display:none">⏹ إيقاف الرصد التلقائي</button>
       <div class="rz-grid">
         <button data-a="preview">👁️ معاينة المطابقة</button>
         <button data-a="report">📥 تقرير Excel</button>
@@ -371,6 +390,9 @@
     const xl = students(wb.sheets[sheetName], nameCol, phraseCol);
     const pg = pageStudents();
     if (!pg.length) { status('⚠️ لم أجد أسماء طلاب في الصفحة — اضغط «عرض» في البوابة أولًا.'); return null; }
+    return planCore(xl, pg, sheetName);
+  }
+  function planCore(xl, pg, sheetName) {
     const used = new Set();
     const items = pg.map(s => {
       const nn = norm(s.name);
@@ -534,6 +556,7 @@ ${done ? '✔ رُصدت' : '✔ مطابقة تامة'}: ${c.ok}${c.fuzzy ? `\n
   function exportReport() {
     const d = last || get(LASTK, null);
     if (!d) { status('⚠️ لا يوجد رصد سابق — اضغط «رصد العبارات» أولًا.'); return; }
+    if (d.auto) return exportAutoReport(d);
     const aoa = [
       ['تقرير رصد العبارات الوصفية'], ['الملف', d.file], ['الورقة', d.sheet], ['التاريخ', d.date], [],
       ['م', 'اسم الطالب في البوابة', 'الرقم', 'الاسم في الإكسل', 'الحالة', 'العبارة الوصفية'],
@@ -560,8 +583,278 @@ ${done ? '✔ رُصدت' : '✔ مطابقة تامة'}: ${c.ok}${c.fuzzy ? `\n
     ].join('\n'));
   }
 
+  // ================= الرصد التلقائي لكل الصفوف والشعب =================
+  const AUTOK = 'rz_auto';
+  const AR = s => String(s || '').replace(/[ً-ٟـ]/g, '').replace(/[أإآ]/g, 'ا').replace(/ة/g, 'ه').replace(/ى/g, 'ي').replace(/[:：]/g, '').replace(/\s+/g, ' ').trim();
+  const GRADES = { 'الخامس': 5, 'السادس': 6, 'السابع': 7, 'الثامن': 8, 'التاسع': 9, 'العاشر': 10, 'الحادي عشر': 11, 'الثاني عشر': 12 };
+  let leaving = false, stopAuto = false, autoBusy = false;
+  window.addEventListener('beforeunload', () => { leaving = true; });
+  window.addEventListener('pagehide', () => { leaving = true; });
+  const isVis = el => !!(el && el.getClientRects().length && getComputedStyle(el).visibility !== 'hidden');
+  const SKIP_LABELS = ['الصف', 'الشعبه', 'اسم الطالب', 'الرقم المدرسي', 'وصف اداء الطالب', 'المجموع'];
+
+  function selLabel(sel) {
+    const td = sel.closest('td'); if (!td) return '';
+    let p = td.previousElementSibling;
+    while (p && !AR(p.innerText)) p = p.previousElementSibling;
+    return p ? AR(p.innerText) : '';
+  }
+  const pageSelects = () => [...document.querySelectorAll('select')]
+    .filter(s => !s.closest('#rz-panel,#rz-done') && isVis(s)).map(el => ({ el, label: selLabel(el) }));
+  const findSel = lab => (pageSelects().find(x => x.label === AR(lab)) || {}).el || null;
+  const realOpts = sel => [...sel.options].filter(o => o.value && !['0', '-1'].includes(o.value) && !/اختر|^-+|الكل|select/i.test(o.text));
+  const selText = sel => ((sel.options[sel.selectedIndex] || {}).text || '').trim();
+  function findShowBtn() {
+    return [...document.querySelectorAll('input[type=submit],input[type=button],button,a')]
+      .find(el => !el.closest('#rz-panel,#rz-done') && isVis(el) && /^\s*عرض\s*$/.test(el.value || el.innerText || '')) || null;
+  }
+  const studSig = () => pageStudents().map(s => s.id).join(',');
+  async function changeSel(sel, value) {
+    sel.value = value;
+    sel.dispatchEvent(new Event('change', { bubbles: true }));
+    await sleep(2500);
+  }
+  async function waitUntil(fn, ms) {
+    const end = Date.now() + ms;
+    while (Date.now() < end && !stopAuto) { const v = fn(); if (v) return v; await sleep(400); }
+    return null;
+  }
+  // رسائل البوابة (alert / confirm) لا توقف الرصد التلقائي؛ تُحفظ الرسالة في التقرير
+  function muteDialogs(on) {
+    const sc = document.createElement('script');
+    sc.textContent = on
+      ? "if(!window.__rzA){window.__rzA=[window.alert,window.confirm];window.alert=function(m){document.documentElement.setAttribute('data-rz-msg',String(m))};window.confirm=function(m){document.documentElement.setAttribute('data-rz-msg',String(m));return true};}"
+      : "if(window.__rzA){window.alert=window.__rzA[0];window.confirm=window.__rzA[1];delete window.__rzA;}";
+    (document.head || document.documentElement).appendChild(sc); sc.remove();
+  }
+  const portalMsg = () => { const m = document.documentElement.getAttribute('data-rz-msg') || ''; document.documentElement.removeAttribute('data-rz-msg'); return m; };
+
+  function gradeNum(t) { const a = AR(t); for (const k in GRADES) if (a === AR(k)) return GRADES[k]; const m = a.match(/\d+/); return m ? +m[0] : null; }
+  function findSheetFor(gradeText, secText) {
+    const g = gradeNum(gradeText), sc = (String(secText).match(/\d+/) || [])[0];
+    if (!g || !sc) return null;
+    const want = g + '.' + sc;
+    const order = [store.current, ...Object.keys(store.files).filter(n => n !== store.current)];
+    for (const fn of order) {
+      const f = store.files[fn]; if (!f) continue;
+      const sn = Object.keys(f.sheets).find(n => n.replace(/\s/g, '') === want);
+      if (sn) return { file: fn, sheetName: sn, sh: f.sheets[sn] };
+    }
+    return null;
+  }
+  function bumpA(s, key) {
+    if (s.rk === key) s.rc++; else { s.rk = key; s.rc = 0; }
+    set(AUTOK, s); return s.rc > 3;
+  }
+  function nextSec(s) { s.si++; s.phase = 'sel'; s.rk = ''; s.rc = 0; s.pending = null; set(AUTOK, s); }
+  function nextGrade(s) { s.gi++; s.si = 0; s.phase = 'sel'; s.rk = ''; s.rc = 0; s.pending = null; set(AUTOK, s); }
+  function logA(s, e) { s.log.push(Object.assign({ grade: '', sec: '', sheet: '', filled: 0, fuzzy: 0, miss: 0, nophrase: 0, status: '', note: '' }, e)); set(AUTOK, s); }
+  function autoStatus(s, msg) {
+    const g = s.cur ? `الصف ${s.gi + 1}/${s.nG || '?'}: ${s.cur.grade}${s.cur.sec ? ` — الشعبة ${s.si + 1}/${s.nS || '?'}: ${s.cur.sec}` : ''}` : '';
+    const saved = s.log.filter(x => x.status.startsWith('✅')).length;
+    status(`🔁 الرصد التلقائي\n${g}\n${msg}\n💾 شعب محفوظة: ${saved}`);
+    $('rz-prog').style.display = 'block';
+    if (s.nG) $('rz-bar').style.width = Math.min(100, ((s.gi + (s.nS ? s.si / s.nS : 0)) / s.nG) * 100) + '%';
+  }
+  function showRunning(on) {
+    panel.querySelector('[data-a=all]').style.display = on ? 'none' : '';
+    panel.querySelector('[data-a=stopall]').style.display = on ? '' : 'none';
+    panel.querySelector('[data-a=go]').disabled = on;
+  }
+
+  function startAuto() {
+    if (!Object.keys(store.files).length) { status('⚠️ ارفع ملف الإكسل أولًا.'); return; }
+    const gSel = findSel('الصف'), sSel = findSel('الشعبة');
+    if (!gSel || !sSel) { status('⚠️ لم أجد قائمتي «الصف» و«الشعبة» في الصفحة.'); return; }
+    const nG = realOpts(gSel).length;
+    // نحفظ اختيارات المعلم الأخرى (المادة، الاختبار، الفصل...) لنعيدها بعد تغيير الصف
+    const fixed = {};
+    pageSelects().forEach(({ el, label }) => {
+      if (!label || SKIP_LABELS.includes(label) || /وصف|المجموع/.test(label)) return;
+      const t = selText(el); if (t && !/اختر|^-+/.test(t)) fixed[label] = t;
+    });
+    const fx = Object.entries(fixed).map(([k, v]) => `• ${k}: ${v}`).join('\n');
+    if (!confirm(`سيمر الراصد على كل الصفوف (${nG}) وكل الشعب، ويرصد العبارات ويضغط «حفظ» لكل شعبة.\n\nسيُثبَّت لكل الصفوف:\n${fx}\n\nكل شعبة تحتاج ورقة باسمها في الإكسل (مثل 8.2).\nمتابعة؟`)) return;
+    stopAuto = false;
+    set(AUTOK, { gi: 0, si: 0, phase: 'sel', fixed, log: [], details: [], rk: '', rc: 0, started: today() });
+    showRunning(true); clearMarks();
+    autoStep();
+  }
+
+  async function autoStep() {
+    if (autoBusy) return;
+    let s = get(AUTOK, null); if (!s) return;
+    autoBusy = true; showRunning(true); muteDialogs(true);
+    try {
+      for (let guard = 0; guard < 60 && !leaving && !stopAuto; guard++) {
+        s = get(AUTOK, null); if (!s) return;
+
+        // ---- الصف ----
+        const gSel = findSel('الصف');
+        if (!gSel) { if (bumpA(s, 'nog')) { autoFinish(s, true, 'لم تظهر قائمة الصف'); return; } await sleep(1500); continue; }
+        const grades = realOpts(gSel);
+        s.nG = grades.length;
+        if (s.gi >= grades.length) { autoFinish(s, false); return; }
+        const g = grades[s.gi];
+        s.cur = { grade: g.text.trim(), sec: '' }; set(AUTOK, s);
+        if (gSel.value !== g.value) {
+          if (bumpA(s, 'g' + s.gi)) { logA(s, { grade: g.text, status: '❌ تخطي', note: 'تعذر اختيار الصف' }); nextGrade(s); continue; }
+          s.phase = 'sel'; set(AUTOK, s);
+          autoStatus(s, 'اختيار الصف...');
+          await changeSel(gSel, g.value); continue;
+        }
+
+        // ---- إعادة المادة والاختبار وغيرها كما اختارها المعلم ----
+        let changed = false, missing = null;
+        for (const [lab, txt] of Object.entries(s.fixed || {})) {
+          const x = findSel(lab); if (!x) continue;
+          if (AR(selText(x)) === AR(txt)) continue;
+          const o = [...x.options].find(o => AR(o.text) === AR(txt));
+          if (!o) { missing = [lab, txt]; break; }
+          if (bumpA(s, 'f' + lab + s.gi)) { missing = [lab, txt]; break; }
+          autoStatus(s, `اختيار ${lab}: ${txt}`);
+          await changeSel(x, o.value); changed = true; break;
+        }
+        if (leaving) return;
+        if (missing) {
+          if (!bumpA(s, 'miss' + s.gi + missing[0])) { await sleep(1500); continue; } // ربما القائمة لم تكتمل بعد
+          logA(s, { grade: g.text, status: '⚠️ تخطي الصف', note: `قائمة «${missing[0]}» لا تحتوي «${missing[1]}» لهذا الصف` });
+          nextGrade(s); continue;
+        }
+        if (changed) continue;
+
+        // ---- الشعبة ----
+        const sSel = findSel('الشعبة');
+        const secs = sSel ? realOpts(sSel) : [];
+        if (!secs.length) {
+          if (bumpA(s, 'nos' + s.gi)) { logA(s, { grade: g.text, status: '⚠️ تخطي الصف', note: 'لا توجد شعب لهذا الصف' }); nextGrade(s); continue; }
+          await sleep(1500); continue;
+        }
+        s.nS = secs.length;
+        if (s.si >= secs.length) { nextGrade(s); continue; }
+        const sec = secs[s.si];
+        s.cur.sec = sec.text.trim(); set(AUTOK, s);
+        const key = s.gi + '.' + s.si;
+        if (sSel.value !== sec.value) {
+          if (bumpA(s, 's' + key)) { logA(s, { grade: g.text, sec: sec.text, status: '❌ تخطي', note: 'تعذر اختيار الشعبة' }); nextSec(s); continue; }
+          s.phase = 'sel'; set(AUTOK, s);
+          autoStatus(s, 'اختيار الشعبة...');
+          await changeSel(sSel, sec.value); continue;
+        }
+
+        const found = findSheetFor(g.text, sec.text);
+        if (!found) {
+          logA(s, { grade: g.text, sec: sec.text, status: '⚠️ لا توجد ورقة', note: `لا توجد ورقة باسم ${gradeNum(g.text)}.${(sec.text.match(/\d+/) || [''])[0]} في ملفات الإكسل` });
+          nextSec(s); continue;
+        }
+
+        // ---- عرض ----
+        if (s.phase === 'sel') {
+          const btn = findShowBtn();
+          if (!btn) { logA(s, { grade: g.text, sec: sec.text, status: '❌ تخطي', note: 'لم أجد زر «عرض»' }); nextSec(s); continue; }
+          s.phase = 'shown'; s.sig = studSig(); set(AUTOK, s);
+          autoStatus(s, '👥 عرض الطلاب...');
+          btn.click();
+          await waitUntil(() => leaving || (studSig() && studSig() !== s.sig), 20000);
+          if (leaving) return;
+          await sleep(800); continue;
+        }
+
+        // ---- رصد وحفظ ----
+        if (s.phase === 'shown') {
+          const pg = pageStudents();
+          if (!pg.length) {
+            if (bumpA(s, 'show' + key)) { logA(s, { grade: g.text, sec: sec.text, sheet: found.sheetName, status: '❌ تخطي', note: 'لم يظهر الطلاب بعد «عرض»' }); nextSec(s); continue; }
+            s.phase = 'sel'; set(AUTOK, s); continue;
+          }
+          const sh = found.sh;
+          const p = planCore(students(sh, sh.info.nameCol, sh.info.phraseCol), pg, found.sheetName);
+          const todo = p.items.filter(i => i.st === 'fill' || i.st === 'fillfuzzy');
+          clearMarks();
+          todo.forEach(i => setVal(i.s.textarea, i.x.phrase));
+          p.items.forEach(i => { const ta = i.s.textarea; if (!ta) return; if (i.st === 'fill' || i.st === 'same') ta.classList.add('rz-ok'); else if (i.st === 'fillfuzzy') ta.classList.add('rz-fuzzy'); else if (i.st === 'nomatch') ta.classList.add('rz-miss'); });
+          const c = counts(p);
+          const tot = +((document.body.innerText.match(/عدد الطلبة\s*(\d+)/) || [])[1] || 0);
+          const notes = [];
+          if (sh.info.phraseCol < 0) notes.push('لم يُعثر على عمود العبارات في الورقة');
+          if (tot > pg.length) notes.push(`عدد الطلبة ${tot} والظاهر ${pg.length} — بقية الطلاب في صفحة أخرى`);
+          if (c.extra) notes.push(`${c.extra} في الإكسل وليسوا في البوابة`);
+          p.items.forEach(i => s.details.push([g.text.trim(), sec.text.trim(), i.s.name, i.s.id, i.x ? i.x.name : '', LABEL[i.st][2], i.x ? i.x.phrase : '']));
+          const entry = { grade: g.text.trim(), sec: sec.text.trim(), sheet: found.sheetName, filled: todo.length, fuzzy: c.fuzzy, miss: c.miss, nophrase: c.nophrase, note: notes.join(' • ') };
+          if (!todo.length) { logA(s, Object.assign(entry, { status: '○ لا جديد', note: (entry.note ? entry.note + ' • ' : '') + 'لا توجد عبارات جديدة لرصدها' })); nextSec(s); continue; }
+          const sv = findSaveBtn();
+          if (!sv) { logA(s, Object.assign(entry, { status: '❌ لم يُحفظ', note: 'لم أجد زر «حفظ»' })); nextSec(s); continue; }
+          s.pending = entry; s.phase = 'saved'; set(AUTOK, s);
+          autoStatus(s, `✍️ رُصدت ${todo.length} — 💾 جاري الحفظ...`);
+          await sleep(700);
+          sv.click();
+          await waitUntil(() => leaving, 12000);
+          if (leaving) return;
+          continue; // الحفظ تم بدون إعادة تحميل
+        }
+
+        if (s.phase === 'saved') {
+          const m = portalMsg();
+          const e = Object.assign({}, s.pending || { grade: g.text, sec: sec.text }, { status: '✅ تم الحفظ' });
+          if (m) e.note = (e.note ? e.note + ' • ' : '') + 'رسالة البوابة: ' + m;
+          logA(s, e); nextSec(s);
+          autoStatus(s, `✅ حُفظت الشعبة ${e.sec}`);
+          await sleep(600); continue;
+        }
+        s.phase = 'sel'; set(AUTOK, s);
+      }
+    } finally {
+      autoBusy = false;
+      if (stopAuto) { const s2 = get(AUTOK, null); if (s2) autoFinish(s2, true, 'أوقفه المستخدم'); }
+    }
+  }
+
+  function autoFinish(s, partial, why) {
+    set(AUTOK, null); try { if (hasGM) GM_deleteValue(AUTOK); } catch (e) {}
+    muteDialogs(false); showRunning(false);
+    $('rz-prog').style.display = 'none';
+    last = { auto: true, date: today(), log: s.log, details: s.details, partial: !!partial, why: why || '' };
+    set(LASTK, last);
+    const ok = s.log.filter(x => x.status.startsWith('✅')).length;
+    const filled = s.log.reduce((a, x) => a + (x.status.startsWith('✅') ? x.filled : 0), 0);
+    const bad = s.log.filter(x => !x.status.startsWith('✅') && !x.status.startsWith('○')).length;
+    status(`${partial ? '⏹ توقف الرصد التلقائي' + (why ? ' — ' + why : '') : '✅ انتهى الرصد التلقائي'}\n💾 شعب محفوظة: ${ok}\n✍️ عبارات رُصدت: ${filled}${bad ? `\n⚠️ شعب بها ملاحظة: ${bad} (انظر التقرير)` : ''}`);
+    $('rz-list').innerHTML = s.log.map(x => `<div><span class="k ${x.status.startsWith('✅') ? 'c-ok' : x.status.startsWith('○') ? 'c-w' : 'c-b'}">${esc(x.status.split(' ')[0])}</span><span>${esc(x.grade)} ${x.sec ? '/ ' + esc(x.sec) : ''} — ${esc(x.status.slice(2))}${x.filled ? ` (${x.filled})` : ''}${x.note ? ` <span class="c-w">${esc(x.note)}</span>` : ''}</span></div>`).join('');
+    showAutoDone(s, ok, filled, bad, partial);
+  }
+
+  function showAutoDone(s, ok, filled, bad, partial) {
+    const fake = { sheetName: 'كل الصفوف', total: s.log.length, items: [], extra: [] };
+    showDone(fake, filled);
+    const card = document.querySelector('#rz-done .card'); if (!card) return;
+    card.querySelector('h2').textContent = partial ? 'توقف الرصد التلقائي قبل الاكتمال' : bad ? 'اكتمل رصد كل الشعب — مع ملاحظات' : 'اكتمل رصد وحفظ كل الشعب بنجاح';
+    card.querySelector('p.s').textContent = `${s.log.length} شعبة مرّ عليها الراصد`;
+    card.querySelector('.stats').innerHTML = `<div class="st"><b>${ok}</b>شعبة حُفظت</div><div class="st"><b>${filled}</b>عبارة رُصدت</div><div class="st ${bad ? 'w' : ''}"><b>${bad}</b>شعبة بها ملاحظة</div>`;
+    card.querySelector('.note').textContent = bad || partial ? '⚠️ نزّل «تقرير Excel» لمعرفة الشعب والطلاب الذين يحتاجون مراجعة.' : '✅ تم الحفظ في البوابة لكل الشعب.';
+    const sb = card.querySelector('[data-x=save]'); if (sb) sb.remove();
+  }
+
+  function exportAutoReport(d) {
+    const sum = [
+      ['تقرير الرصد التلقائي للعبارات الوصفية'], ['التاريخ', d.date], d.partial ? ['⏹ تنبيه', 'توقف قبل الاكتمال' + (d.why ? ' — ' + d.why : '')] : [], [],
+      ['م', 'الصف', 'الشعبة', 'الورقة', 'الحالة', 'عبارات رُصدت', 'تقريبية', 'لم تُطابق', 'بدون عبارة', 'ملاحظة'],
+      ...d.log.map((x, i) => [i + 1, x.grade, x.sec, x.sheet, x.status, x.filled, x.fuzzy, x.miss, x.nophrase, x.note]),
+    ];
+    const ws1 = XLSX.utils.aoa_to_sheet(sum);
+    ws1['!cols'] = [{ wch: 5 }, { wch: 14 }, { wch: 8 }, { wch: 10 }, { wch: 16 }, { wch: 12 }, { wch: 9 }, { wch: 10 }, { wch: 11 }, { wch: 60 }];
+    const ws2 = XLSX.utils.aoa_to_sheet([['الصف', 'الشعبة', 'اسم الطالب في البوابة', 'الرقم', 'الاسم في الإكسل', 'الحالة', 'العبارة الوصفية'], ...d.details]);
+    ws2['!cols'] = [{ wch: 12 }, { wch: 8 }, { wch: 36 }, { wch: 15 }, { wch: 36 }, { wch: 26 }, { wch: 70 }];
+    ws2['!autofilter'] = { ref: ws2['!ref'] };
+    const book = XLSX.utils.book_new(); book.Workbook = { Views: [{ RTL: true }] };
+    XLSX.utils.book_append_sheet(book, ws1, 'ملخص الشعب');
+    XLSX.utils.book_append_sheet(book, ws2, 'تفاصيل الطلاب');
+    XLSX.writeFile(book, `تقرير_الرصد_التلقائي_${d.date}.xlsx`);
+  }
+
   panel.addEventListener('click', e => {
     const a = (e.target.closest('button[data-a]') || {}).dataset?.a;
+    if (a === 'all') startAuto();
+    if (a === 'stopall') { stopAuto = true; const s = get(AUTOK, null); if (s && !autoBusy) autoFinish(s, true, 'أوقفه المستخدم'); }
     if (a === 'go') run();
     if (a === 'preview') { const p = plan(); if (p) { clearMarks(); status('👁️ معاينة (لم يُكتب شيء)\n' + summary(p, false)); renderList(p, false); } }
     if (a === 'report') exportReport();
@@ -571,8 +864,13 @@ ${done ? '✔ رُصدت' : '✔ مطابقة تامة'}: ${c.ok}${c.fuzzy ? `\n
   });
 
   fillSheets();
-  if (wb) {
+  if (get(AUTOK, null)) {
+    // استئناف تلقائي بعد كل تحميل للصفحة
+    showRunning(true); status('🔁 استئناف الرصد التلقائي...');
+    setTimeout(autoStep, 1500);
+  } else if (wb) {
     const n = pageStudents().length;
     if (n) status(`👥 ${n} طالب في الصفحة — اضغط «رصد العبارات».`);
+  }
   }
 })();
