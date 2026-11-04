@@ -1,133 +1,724 @@
 <!doctype html>
-<html lang="ar" dir="rtl">
+<html lang="ar" dir="rtl" class="scroll-smooth">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>استبيان الصف الأول</title>
-<style>
-  :root{--bg:#FFFDF8;--card:#fff;--primary:#6FD3FF;--accent:#FFE380;--success:#75E0A3;--text:#2b2b2b}
-  *{box-sizing:border-box} body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Arial,sans-serif;background:var(--bg);color:var(--text)}
-  .container{max-width:980px;margin:24px auto;padding:16px}
-  header{display:flex;align-items:center;justify-content:space-between;gap:12px;background:linear-gradient(135deg,var(--primary),#FFB3D9);color:#fff;padding:18px 20px;border-radius:20px;box-shadow:0 10px 30px rgba(0,0,0,.08)}
-  .title{font-size:clamp(20px,3.5vw,32px);font-weight:800}
-  .card{background:var(--card);border-radius:20px;padding:18px;margin-top:16px;box-shadow:0 8px 22px rgba(0,0,0,.06);border:3px dashed #F9E3A8}
-  .question{display:grid;grid-template-columns:1fr auto;align-items:center;gap:12px;padding:14px 12px;border-radius:18px;background:#FCFDFF;border:1px solid #EFF3FF;margin:10px 0}
-  .q-text{font-size:20px;font-weight:800;display:flex;align-items:center;gap:10px}
-  .q-number{display:inline-grid;place-items:center;width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,var(--accent),#FFB3D9);color:#222;font-weight:900}
-  .speak-btn{display:inline-flex;align-items:center;gap:8px;border:none;cursor:pointer;background:var(--primary);color:#fff;padding:10px 12px;border-radius:999px;font-weight:800;box-shadow:0 6px 0 #2aa6db}
-  .options{display:flex;flex-wrap:wrap;gap:10px;padding-inline:6px;margin-top:8px}
-  .opt{position:relative} .opt input{position:absolute;inset:0;opacity:0}
-  .chip{display:inline-flex;align-items:center;gap:8px;padding:10px 14px;border-radius:999px;background:#F4F9FF;border:2px solid #DCEEFF;font-weight:800;cursor:pointer}
-  .opt input:checked + .chip{background:#E9FFF0;border-color:var(--success);box-shadow:0 4px 0 #56b338;transform:translateY(-1px)}
-  .actions{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;margin:18px 0 8px}
-  .btn{border:none;cursor:pointer;font-weight:900;padding:14px 18px;border-radius:14px;box-shadow:0 8px 0 rgba(0,0,0,.12);color:#222}
-  .btn-primary{background:linear-gradient(135deg,var(--accent),#FFF0A6)}
-  .btn-reset{background:linear-gradient(135deg,#FFCECE,#FF9D9D)}
-  .footer-note{text-align:center;font-weight:700;color:#6b7280;margin-top:8px}
-  @media (max-width:640px){.question{grid-template-columns:1fr}.speak-btn{justify-self:start}}
-</style>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>مركز تثبيت أداة راصد | العبارات الوصفية</title>
+  
+  <!-- استدعاء خط كايرو الهندسي الحديث من Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  
+  <!-- استدعاء Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    // ألوان قابلة للتبديل: تُقرأ من متغيرات CSS حسب اللون المختار
+    const shades = n => Object.fromEntries([50,100,200,300,400,500,600,700,800,900,950].map(s => [s, `rgb(var(--${n}-${s}) / <alpha-value>)`]));
+    // تطبيق اللون المحفوظ قبل رسم الصفحة (الذهبي افتراضي)
+    (function(){ let c = 'gold'; try { c = localStorage.getItem('rasid_color') || 'gold'; } catch(e){} document.documentElement.setAttribute('data-color', c); })();
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Cairo', 'sans-serif'],
+          },
+          colors: {
+            obsidian: '#0c0a09',
+            charcoal: '#1c1917',
+            sand: 'rgb(var(--sand) / <alpha-value>)',
+            amber: shades('amber'),
+            orange: shades('orange'),
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    html[data-color="gold"]{--amber-50:255 251 235;--amber-100:254 243 199;--amber-200:246 224 150;--amber-300:238 203 90;--amber-400:230 182 38;--amber-500:212 160 23;--amber-600:184 134 11;--amber-700:146 104 9;--amber-800:115 82 11;--amber-900:92 66 12;--amber-950:54 38 6;--orange-50:253 248 234;--orange-100:250 236 200;--orange-200:240 214 150;--orange-300:226 186 92;--orange-400:206 156 46;--orange-500:190 138 22;--orange-600:161 112 10;--orange-700:130 89 9;--orange-800:102 70 10;--orange-900:82 57 11;--orange-950:48 33 6;--sand:253 250 240}
+    html[data-color="emerald"]{--amber-50:236 253 245;--amber-100:209 250 229;--amber-200:167 243 208;--amber-300:110 231 183;--amber-400:52 211 153;--amber-500:16 185 129;--amber-600:5 150 105;--amber-700:4 120 87;--amber-800:6 95 70;--amber-900:6 78 59;--amber-950:2 44 34;--orange-50:240 253 250;--orange-100:204 251 241;--orange-200:153 246 228;--orange-300:94 234 212;--orange-400:45 212 191;--orange-500:20 184 166;--orange-600:13 148 136;--orange-700:15 118 110;--orange-800:17 94 89;--orange-900:19 78 74;--orange-950:4 47 46;--sand:243 251 247}
+    html[data-color="royal"]{--amber-50:239 246 255;--amber-100:219 234 254;--amber-200:191 219 254;--amber-300:147 197 253;--amber-400:96 165 250;--amber-500:59 130 246;--amber-600:37 99 235;--amber-700:29 78 216;--amber-800:30 64 175;--amber-900:30 58 138;--amber-950:23 37 84;--orange-50:238 242 255;--orange-100:224 231 255;--orange-200:199 210 254;--orange-300:165 180 252;--orange-400:129 140 248;--orange-500:99 102 241;--orange-600:79 70 229;--orange-700:67 56 202;--orange-800:55 48 163;--orange-900:49 46 129;--orange-950:30 27 75;--sand:243 246 253}
+    html[data-color="violet"]{--amber-50:245 243 255;--amber-100:237 233 254;--amber-200:221 214 254;--amber-300:196 181 253;--amber-400:167 139 250;--amber-500:139 92 246;--amber-600:124 58 237;--amber-700:109 40 217;--amber-800:91 33 182;--amber-900:76 29 149;--amber-950:46 16 101;--orange-50:250 245 255;--orange-100:243 232 255;--orange-200:233 213 255;--orange-300:216 180 254;--orange-400:192 132 252;--orange-500:168 85 247;--orange-600:147 51 234;--orange-700:126 34 206;--orange-800:107 33 168;--orange-900:88 28 135;--orange-950:59 7 100;--sand:248 245 254}
+    html[data-color="dark"]{--amber-50:255 251 235;--amber-100:254 243 199;--amber-200:253 230 138;--amber-300:252 211 77;--amber-400:251 191 36;--amber-500:245 158 11;--amber-600:217 119 6;--amber-700:180 83 9;--amber-800:146 64 14;--amber-900:120 53 15;--amber-950:69 26 3;--orange-50:255 247 237;--orange-100:255 237 213;--orange-200:254 215 170;--orange-300:253 186 116;--orange-400:251 146 60;--orange-500:249 115 22;--orange-600:234 88 12;--orange-700:194 65 12;--orange-800:154 52 18;--orange-900:124 45 18;--orange-950:67 20 7;--sand:250 248 245}
+    .color-dot { width: 18px; height: 18px; border-radius: 999px; cursor: pointer; border: 2px solid #fff; box-shadow: 0 0 0 1px rgba(120,113,108,.35); transition: transform .15s; }
+    .dark .color-dot { border-color: #1c1917; }
+    .color-dot:hover { transform: scale(1.18); }
+    .color-dot.on { box-shadow: 0 0 0 2px rgb(var(--amber-600)); }
+    body {
+      font-family: 'Cairo', sans-serif;
+      overflow-x: hidden;
+    }
+
+    /* خلفية شبكية هندسية دقيقة */
+    .bg-grid-pattern {
+      background-size: 32px 32px;
+      background-image: 
+        linear-gradient(to right, rgba(120, 113, 108, 0.08) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(120, 113, 108, 0.08) 1px, transparent 1px);
+    }
+    .dark .bg-grid-pattern {
+      background-image: 
+        linear-gradient(to right, rgba(255, 255, 255, 0.04) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
+    }
+
+    /* تأثيرات التبويبات ومؤشر الخطوات */
+    .tab-btn {
+      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .tab-btn.active {
+      background: linear-gradient(135deg, rgb(var(--amber-500)), rgb(var(--orange-600)));
+      color: #ffffff;
+      border-color: transparent;
+      box-shadow: 0 10px 25px -5px rgb(var(--orange-600) / 0.4);
+    }
+    .tab-btn.done:not(.active) {
+      border-color: rgba(16, 185, 129, 0.5);
+      background-color: rgba(16, 185, 129, 0.08);
+    }
+
+    /* أنيميشن ظهور المحتوى */
+    .panel-view {
+      display: none;
+      animation: slideFade 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+    .panel-view.active {
+      display: block;
+    }
+    @keyframes slideFade {
+      from {
+        opacity: 0;
+        transform: translateY(10px) scale(0.99);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+
+    /* حلقة التقدم الدائرية */
+    .progress-ring__circle {
+      transition: stroke-dashoffset 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+      transform: rotate(-90deg);
+      transform-origin: 50% 50%;
+    }
+  </style>
 </head>
-<body>
-<div class="container">
-  <header><div class="title">✨ <b>مرحبًا يا أبطال الصف الأول</b> ✨<br>🧠 <i>اضغط على السماعة لسماع السؤال — تعلّم ممتع!</i> 🎮</div></header>
-  <form id="quizForm" class="card">
-    <div id="questions"></div>
-    <div class="actions">
-      <button type="button" class="btn btn-primary" id="sendBtn">إرسال</button>
-      <button type="reset" class="btn btn-reset">إعادة</button>
+
+<body class="bg-sand dark:bg-obsidian text-stone-900 dark:text-stone-100 min-h-screen bg-grid-pattern selection:bg-amber-500 selection:text-white transition-colors duration-300 flex flex-col justify-between">
+
+  <!-- إضاءة محيطية دافئة غير تقليدية -->
+  <div class="fixed inset-0 pointer-events-none overflow-hidden -z-10">
+    <div class="absolute -top-32 right-10 w-[28rem] h-[28rem] bg-amber-500/10 dark:bg-amber-500/10 rounded-full blur-3xl"></div>
+    <div class="absolute bottom-0 left-10 w-[26rem] h-[26rem] bg-orange-600/10 dark:bg-orange-600/10 rounded-full blur-3xl"></div>
+  </div>
+
+  <!-- الشريط العلوي (Top Command Bar) -->
+  <header class="w-full border-b border-stone-200/80 dark:border-stone-800/80 bg-white/70 dark:bg-charcoal/70 backdrop-blur-xl sticky top-0 z-30">
+    <div class="max-w-3xl mx-auto px-4 sm:px-6 h-20 flex items-center justify-between gap-4">
+      
+      <!-- الشعار والهوية -->
+      <div class="flex items-center gap-3.5">
+        <div class="relative w-12 h-12 rounded-2xl bg-stone-900 dark:bg-amber-500 text-amber-400 dark:text-stone-950 flex items-center justify-center font-black text-xl shadow-lg">
+          <span class="text-base">راصد</span>
+          <span class="absolute -bottom-1 -left-1 w-3.5 h-3.5 rounded-full bg-emerald-500 border-2 border-white dark:border-charcoal"></span>
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <h1 class="font-black text-base sm:text-xl tracking-tight whitespace-nowrap text-stone-900 dark:text-white">راصد العبارات الوصفية</h1>
+            <span id="ver" class="shrink-0 whitespace-nowrap px-2.5 py-0.5 rounded-md text-xs font-extrabold bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30">
+              الإصدار …
+            </span>
+          </div>
+          <p class="text-xs text-stone-500 dark:text-stone-400">معالج الإعداد والتشغيل الفوري • البوابة التعليمية</p>
+        </div>
+      </div>
+
+      <!-- أدوات التحكم العلوية -->
+      <div class="flex items-center gap-2.5">
+        <!-- زر نافذة التثبيت اليدوي والفنيين -->
+        <button onclick="openModal('toolsModal')" class="inline-flex items-center gap-2 px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-bold bg-stone-100 hover:bg-stone-200 dark:bg-stone-800 dark:hover:bg-stone-700 text-stone-700 dark:text-stone-200 border border-stone-200/80 dark:border-stone-700 transition-all">
+          <svg class="w-4 h-4 text-amber-600 dark:text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+            <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+          </svg>
+          <span class="hidden sm:inline">التثبيت اليدوي والفنيين</span>
+        </button>
+
+        <!-- اختيار اللون -->
+        <div class="hidden sm:flex items-center gap-1.5 px-2.5 py-2 rounded-xl bg-stone-100 dark:bg-stone-800 border border-stone-200/80 dark:border-stone-700" id="colorDots">
+          <span class="color-dot" data-c="gold" title="ذهبي" style="background:#d4a017"></span>
+          <span class="color-dot" data-c="emerald" title="زمردي" style="background:#10b981"></span>
+          <span class="color-dot" data-c="royal" title="ملكي" style="background:#1e40af"></span>
+          <span class="color-dot" data-c="violet" title="بنفسجي" style="background:#8b5cf6"></span>
+          <span class="color-dot" data-c="dark" title="داكن" style="background:#1c1917"></span>
+        </div>
+
+        <!-- تبديل النمط -->
+        <button onclick="toggleTheme()" aria-label="تغيير المظهر" class="p-2.5 rounded-xl bg-stone-100 hover:bg-stone-200 dark:bg-stone-800 dark:hover:bg-stone-700 text-stone-700 dark:text-stone-200 border border-stone-200/80 dark:border-stone-700 transition-all">
+          <svg class="w-5 h-5 hidden dark:block text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+          </svg>
+          <svg class="w-5 h-5 block dark:hidden text-stone-700" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+          </svg>
+        </button>
+      </div>
+
     </div>
-    <div id="status" class="footer-note">💡 يرجى الإجابة على كل الأسئلة ثم الضغط على إرسال.</div>
-  </form>
-</div>
+  </header>
 
-<script>
-  // ✅ رابط الويب-آب الصحيح (Google Apps Script)
-  const SHEET_ENDPOINT = "https://script.google.com/macros/s/AKfycbw_8WBMPnMkgn0her2lkzQ12Y5O-88Qi-mIroYj3grAlbYA5NQS3ZuJvgUpMSKGIYIyNQ/exec";
+  <!-- مساحة العمل الرئيسية (Bento Split-Screen Layout) -->
+  <main class="max-w-3xl w-full mx-auto px-4 sm:px-6 py-5 flex-1">
+    
+    <div class="flex flex-col gap-4">
 
-  // --- 1) بيانات الأسئلة ---
-  const data = [
-    {q:" هَلْ تُحِبُّ حِصَّةَ اللُّغَةِ الْإِنْجِلِيزِيَّةِ عِنْدَمَا نَسْتَخْدِمُ الشَّاشَةَ التَّفَاعُلِيَّةَ؟",opts:["أحبها كثيرًا","أحيانًا","لا أحبها"]},
-    {q:" هَلْ تَشْعُرُ بِالسَّعَادَةِ عِنْدَمَا تَتَعَلَّمُ وَأَنْتَ تَلْعَبُ؟",opts:["دائمًا","أحيانًا","نادرًا"]},
-    {q:" هَلِ الْأَلْعَابُ تُسَاعِدُكَ عَلَى حِفْظِ الْكَلِمَاتِ بِسُرْعَةٍ؟",opts:["نعم كثيرًا","أحيانًا","لا"]},
-    {q:" هَلْ تَسْتَمْتِعُ عِنْدَمَا تَسْمَعُ الْكَلِمَاتِ الْإِنْجِلِيزِيَّةَ وَتُكَرِّرُهَا بِصَوْتِكَ؟",opts:["ممتع جدًا","عادي","غير ممتع"]},
-    {q:" هَلْ تُحِبُّ الْعَمَلَ مَعَ أَصْدِقَائِكَ فِي الْأَلْعَابِ الْجَمَاعِيَّةِ؟",opts:["أحب كثيرًا","أحيانًا","لا أحب"]},
-    {q:" هَلْ تَتَعَلَّمُ بِسُرْعَةٍ عِنْدَمَا تَلْمَسُ الصُّوَرَ وَالْكَلِمَاتِ عَلَى الشَّاشَةِ؟",opts:["صحيح جدًا","أحيانًا","لا"]},
-    {q:" هَلْ تَسْتَطِيعُ تَذَكُّرَ الْكَلِمَاتِ الَّتِي تَعَلَّمْتَهَا مِنْ خِلَالِ اللَّعِبِ؟",opts:["بسهولة","أحيانًا","بصعوبة"]},
-    {q:" هَلْ تَشْعُرُ بِالْحَمَاسِ عِنْدَمَا تُشَارِكُ فِي اللُّعْبَةِ أَمَامَ زُمَلَائِكَ؟",opts:["دائمًا","أحيانًا","نادرًا"]},
-    {q:" هَلْ تُحِبُّ أَنْ تَكُونَ كُلُّ حِصَصِ اللُّغَةِ الْإِنْجِلِيزِيَّةِ بِهَذِهِ الطَّرِيقَةِ الْمُمْتِعَةِ؟",opts:["نعم بالتأكيد","ربما","لا"]},
-    {q:" هَلِ التَّعَلُّمُ بِالْأَلْعَابِ يَجْعَلُ اللُّغَةَ الْإِنْجِلِيزِيَّةَ أَسْهَلَ وَأَجْمَلَ؟",opts:["صحيح جدًا","أحيانًا","لا أشعر بذلك"]}
-  ];
+      <!-- العمود الأيمن: بطاقة الهوية + محاكي الأداة + الإنجاز (5 أعمدة) -->
+      <div class="contents">
+        
+        <!-- بطاقة الملخص الفاخرة (Dark Obsidian Card) -->
+        <div class="order-1 rounded-3xl bg-stone-900 dark:bg-charcoal text-white p-4 sm:p-5 border border-stone-800 shadow-xl relative overflow-hidden">
+          <div class="absolute -left-10 -bottom-10 w-36 h-36 bg-amber-500/20 rounded-full blur-2xl pointer-events-none"></div>
+          <div class="relative flex items-center justify-between gap-4">
+            <div class="min-w-0">
+              <h2 class="text-base sm:text-lg font-black leading-snug">
+                انقل العبارات الوصفية من الإكسل إلى البوابة <span class="text-amber-400">بضغطة واحدة</span>
+              </h2>
+              <p class="text-stone-400 text-xs sm:text-[13px] leading-relaxed mt-1">
+                تطابق الأداة أسماء الطلاب بين ملف الإكسل وصفحة «إدخال الدرجات» وتكتب العبارة لكل طالب، مع تقرير بالطلاب غير المطابقين.
+              </p>
+            </div>
 
-  // --- 2) توليد الأسئلة ---
-  function render(){
-    const el = document.getElementById('questions'); el.innerHTML='';
-    data.forEach((item,idx)=>{
-      const qId = `q${idx+1}`;
-      const wrap = document.createElement('div'); wrap.className='question';
-      wrap.innerHTML = `
-        <div class="q-text"><span class="q-number">${idx+1}</span><span id="${qId}-label">${item.q}</span></div>
-        <button type="button" class="speak-btn" id="${qId}-btn">🔊 سماعة</button>
-        <div class="options" role="radiogroup" aria-labelledby="${qId}-label">
-          ${item.opts.map(opt=>`
-            <label class="opt">
-              <input type="radio" name="${qId}" value="${opt}" required />
-              <span class="chip">${opt}</span>
-            </label>
-          `).join('')}
-        </div>`;
-      el.appendChild(wrap);
-    });
-    // أزرار الصوت
-    data.forEach((_,i)=>{
-      const id = `q${i+1}`;
-      document.getElementById(`${id}-btn`).addEventListener('click',()=>{
-        const t = document.getElementById(`${id}-label`).innerText;
-        speak(t);
+            <!-- عداد التقدم الدائري -->
+            <div class="shrink-0 flex items-center gap-2.5 bg-white/5 px-3 py-1.5 rounded-2xl border border-white/10">
+              <div class="relative w-9 h-9 flex items-center justify-center">
+                <svg class="w-9 h-9" viewBox="0 0 36 36">
+                  <circle cx="18" cy="18" r="15" fill="none" class="stroke-stone-700" stroke-width="3.5"></circle>
+                  <circle id="ringCircle" cx="18" cy="18" r="15" fill="none" class="stroke-amber-400 progress-ring__circle" stroke-width="3.5" stroke-dasharray="94.2" stroke-dashoffset="94.2" stroke-linecap="round"></circle>
+                </svg>
+                <span id="ringText" class="absolute text-[10px] font-black text-white">0%</span>
+              </div>
+              <div class="text-right hidden sm:block">
+                <p class="text-[11px] text-stone-400 leading-none">جاهزية التثبيت</p>
+                <p id="statusLabel" class="text-xs font-bold text-amber-300 mt-0.5">غير مكتمل</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- بطاقة معلومات المصمم + إعادة الضبط -->
+        <div class="order-3 relative rounded-2xl bg-white dark:bg-charcoal border border-stone-200/90 dark:border-stone-800 p-4 px-5 flex items-center justify-center shadow-sm">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-600 dark:text-amber-400 flex items-center justify-center">
+              <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9.75 3.104v5.714a2.25 2.25 0 01-.659 1.591L5 14.5M9.75 3.104c-.251.023-.501.05-.75.082m.75-.082a24.301 24.301 0 014.5 0m0 0v5.714c0 .597.237 1.17.659 1.591L19.8 15.3M14.25 3.104c.251.023.501.05.75.082M19.8 15.3l-1.57.393A9.065 9.065 0 0112 15a9.065 9.065 0 00-6.23-.693L5 14.5m14.8.8l1.402 1.402c1.232 1.232.65 3.318-1.067 3.611A48.309 48.309 0 0112 21c-2.773 0-5.491-.235-8.135-.687-1.718-.293-2.3-2.379-1.067-3.61L5 14.5" />
+              </svg>
+            </div>
+            <div class="text-center">
+              <p class="text-xs text-stone-400">تصميم وتطوير</p>
+              <p class="text-sm font-extrabold text-stone-800 dark:text-stone-100">سيف جمال المعولي</p>
+              <p class="text-xs text-stone-500 dark:text-stone-400">معولة بن شمس (5-12)</p>
+            </div>
+          </div>
+
+          <button id="resetBtn" onclick="resetProgress()" class="hidden absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-rose-600 dark:text-rose-400 hover:underline px-2 py-1">
+            إعادة ضبط
+          </button>
+        </div>
+
+      </div>
+
+      <!-- العمود الأيسر: معالج الخطوات التفاعلي (Interactive Stepper) (7 أعمدة) -->
+      <div class="order-2 bg-white dark:bg-charcoal border border-stone-200/90 dark:border-stone-800 rounded-3xl p-5 sm:p-8 shadow-xl shadow-stone-900/5">
+        
+        <!-- شريط اختيار الخطوات (3 Tabs) -->
+        <div class="grid grid-cols-3 gap-2.5 sm:gap-3 mb-7">
+          
+          <button id="tabBtn1" onclick="switchTab(1)" class="tab-btn active text-right p-3 sm:p-4 rounded-2xl border border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-stone-900/60 flex flex-col justify-between gap-2">
+            <div class="flex items-center justify-between w-full">
+              <span class="text-xs font-extrabold opacity-80">الخطوة 01</span>
+              <span id="check1" class="hidden w-5 h-5 rounded-full bg-emerald-500 text-white text-xs items-center justify-center font-black">✓</span>
+            </div>
+            <div class="font-black text-sm sm:text-base truncate">1. المشغّل</div>
+          </button>
+
+          <button id="tabBtn2" onclick="switchTab(2)" class="tab-btn text-right p-3 sm:p-4 rounded-2xl border border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-stone-900/60 flex flex-col justify-between gap-2">
+            <div class="flex items-center justify-between w-full">
+              <span class="text-xs font-extrabold opacity-80">الخطوة 02</span>
+              <span id="check2" class="hidden w-5 h-5 rounded-full bg-emerald-500 text-white text-xs items-center justify-center font-black">✓</span>
+            </div>
+            <div class="font-black text-sm sm:text-base truncate">2. أداة الرصد</div>
+          </button>
+
+          <button id="tabBtn3" onclick="switchTab(3)" class="tab-btn text-right p-3 sm:p-4 rounded-2xl border border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-stone-900/60 flex flex-col justify-between gap-2">
+            <div class="flex items-center justify-between w-full">
+              <span class="text-xs font-extrabold opacity-80">الخطوة 03</span>
+              <span class="text-xs">🚀</span>
+            </div>
+            <div class="font-black text-sm sm:text-base truncate">3. التشغيل</div>
+          </button>
+
+        </div>
+
+        <!-- محتوى الخطوة 1: Tampermonkey -->
+        <div id="panel1" class="panel-view active">
+          <div class="inline-flex items-center gap-2 px-3 py-1 rounded-lg bg-amber-500/10 text-amber-700 dark:text-amber-400 text-xs font-bold mb-3">
+            <span>🧩 الأساس البرمجي</span>
+            <span>•</span>
+            <span>تُنفّذ مرة واحدة فقط على الجهاز</span>
+          </div>
+
+          <h3 class="text-2xl sm:text-3xl font-black text-stone-900 dark:text-white mb-3">
+            ثبّت إضافة Tampermonkey
+          </h3>
+
+          <!-- اختيار المتصفح (يُحدَّد تلقائيًا) -->
+          <div class="flex items-center gap-2 mb-4 flex-wrap">
+            <span class="text-xs font-bold text-stone-400">متصفحك:</span>
+            <button data-br="firefox" onclick="setBrowser('firefox')" class="br-btn px-3 py-1.5 rounded-lg text-xs font-extrabold border border-stone-200 dark:border-stone-700 bg-stone-50 dark:bg-stone-900">🦊 Firefox</button>
+            <button data-br="chrome" onclick="setBrowser('chrome')" class="br-btn px-3 py-1.5 rounded-lg text-xs font-extrabold border border-stone-200 dark:border-stone-700 bg-stone-50 dark:bg-stone-900">🌐 Chrome</button>
+            <button data-br="edge" onclick="setBrowser('edge')" class="br-btn px-3 py-1.5 rounded-lg text-xs font-extrabold border border-stone-200 dark:border-stone-700 bg-stone-50 dark:bg-stone-900">🌀 Edge</button>
+          </div>
+
+          <p class="text-stone-600 dark:text-stone-300 text-sm sm:text-base leading-relaxed mb-6">
+            هذه الإضافة مجانية وآمنة، وهي المسؤولة عن تشغيل أداة الرصد داخل متصفحك. اضغط على الزر بالأسفل، ثم اختر <strong id="tmAddLabel" class="text-stone-900 dark:text-white">«أضف إلى Firefox»</strong> ثم <strong id="tmAddLabel2" class="text-stone-900 dark:text-white">«أضف»</strong>.
+          </p>
+
+          <!-- الزر الرئيسي للخطوة 1 -->
+          <div class="p-5 rounded-2xl bg-stone-50 dark:bg-stone-900/90 border border-stone-200/80 dark:border-stone-800 mb-6 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
+            <div>
+              <div class="text-xs font-bold text-stone-400 mb-0.5">المتجر الرسمي للمتصفح</div>
+              <div class="font-extrabold text-stone-800 dark:text-stone-100 text-base" id="browserDetectedTitle">إضافة Tampermonkey لمتصفح Firefox</div>
+            </div>
+
+            <a id="tmLink" href="https://addons.mozilla.org/ar/firefox/addon/tampermonkey/" target="_blank" rel="noopener" onclick="mark('s1', true)" class="inline-flex items-center justify-center gap-2.5 bg-gradient-to-l from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white font-black px-6 py-3.5 rounded-xl shadow-lg shadow-orange-500/25 hover:-translate-y-0.5 transition-all text-sm sm:text-base shrink-0">
+              <span>🧩 تثبيت Tampermonkey</span>
+              <svg class="w-4 h-4 rtl:rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+              </svg>
+            </a>
+          </div>
+
+          <!-- خطوة إضافية إلزامية في Chrome و Edge -->
+          <div id="chromiumBox" class="hidden mb-5 p-4 sm:p-5 rounded-2xl border-2 border-amber-500/50 bg-amber-500/10">
+            <div class="flex items-center gap-2 mb-2">
+              <span class="px-2 py-0.5 rounded-md bg-amber-500 text-white text-[11px] font-black">مهم جدًا</span>
+              <h4 class="font-black text-stone-900 dark:text-white text-sm sm:text-base">بعد التثبيت: فعّل تشغيل السكربتات</h4>
+            </div>
+            <p class="text-xs sm:text-sm text-stone-600 dark:text-stone-300 mb-3">بدون هذه الخطوة لن تظهر لوحة الأداة في البوابة. تُنفّذ مرة واحدة فقط.</p>
+
+            <ol id="chromeSteps" class="list-decimal list-inside space-y-1.5 text-xs sm:text-sm text-stone-700 dark:text-stone-200">
+              <li>اضغط بالزر الأيمن على أيقونة <b>Tampermonkey</b> 🧩 في شريط المتصفح ← <b>«إدارة الإضافة»</b> (Manage extension).</li>
+              <li>فعّل خيار <b>«السماح بنصوص المستخدم البرمجية»</b> (Allow User Scripts).</li>
+              <li>إذا لم تجد الخيار: افتح العنوان <code class="px-1.5 py-0.5 rounded bg-stone-200 dark:bg-stone-800 font-mono text-[11px]" dir="ltr">chrome://extensions</code> وفعّل <b>«وضع المطوّر»</b> (Developer mode) أعلى يمين الصفحة.</li>
+            </ol>
+            <ol id="edgeSteps" class="hidden list-decimal list-inside space-y-1.5 text-xs sm:text-sm text-stone-700 dark:text-stone-200">
+              <li>انسخ العنوان بالزر أدناه، والصقه في شريط العنوان واضغط Enter.</li>
+              <li>فعّل <b>«وضع المطوّر»</b> (Developer mode) من القائمة الجانبية أو أسفل الصفحة.</li>
+              <li>إذا ظهر خيار <b>«السماح بنصوص المستخدم البرمجية»</b> (Allow User Scripts) في تفاصيل Tampermonkey فعّله أيضًا.</li>
+            </ol>
+
+            <div class="flex flex-wrap items-center gap-2 mt-3">
+              <button onclick="copyExtUrl()" class="inline-flex items-center gap-2 bg-stone-900 dark:bg-amber-500 text-white dark:text-stone-950 font-black px-4 py-2 rounded-xl text-xs sm:text-sm">
+                📋 نسخ العنوان <span id="extUrl" dir="ltr" class="font-mono font-bold opacity-80">chrome://extensions</span>
+              </button>
+              <span class="text-[11px] text-stone-500">(المتصفح لا يسمح بفتح هذه الصفحة من رابط مباشر)</span>
+            </div>
+          </div>
+
+          <div class="flex items-start gap-3 p-4 rounded-2xl bg-amber-50/70 dark:bg-amber-950/20 border border-amber-200/70 dark:border-amber-800/40 text-xs sm:text-sm text-amber-900 dark:text-amber-200 mb-6">
+            <span class="text-lg leading-none">💡</span>
+            <p id="tmNote">إذا كانت الإضافة مثبتة عندك مسبقًا، لا داعي لتثبيتها مرة أخرى؛ انتقل مباشرة للخطوة الثانية.</p>
+          </div>
+
+          <!-- أزرار التنقل السفلية داخل البطاقة -->
+          <div class="pt-4 border-t border-stone-200/70 dark:border-stone-800 flex items-center justify-between">
+            <span class="text-xs text-stone-400">الخطوة 1 من 3</span>
+            <button onclick="switchTab(2)" class="inline-flex items-center gap-2 text-sm font-extrabold text-amber-600 dark:text-amber-400 hover:text-amber-700">
+              <span>تخطي أو الانتقال للخطوة 2</span>
+              <span>←</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- محتوى الخطوة 2: تثبيت السكربت -->
+        <div id="panel2" class="panel-view">
+          <div class="inline-flex items-center gap-2 px-3 py-1 rounded-lg bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 text-xs font-bold mb-3">
+            <span>⚡ السكربت الذكي</span>
+            <span>•</span>
+            <span>يدعم التحديث التلقائي</span>
+          </div>
+
+          <h3 class="text-2xl sm:text-3xl font-black text-stone-900 dark:text-white mb-3">
+            ثبّت أداة رصد العبارات الوصفية
+          </h3>
+
+          <p class="text-stone-600 dark:text-stone-300 text-sm sm:text-base leading-relaxed mb-6">
+            عند الضغط على الزر أدناه، ستفتح لك شاشة Tampermonkey وبها الكود البرمجي جاهزًا، كل ما عليك هو الضغط على زر <strong class="text-stone-900 dark:text-white">«تثبيت» (Install)</strong> فقط.
+          </p>
+
+          <!-- الزر الرئيسي للخطوة 2 -->
+          <div class="p-5 rounded-2xl bg-stone-50 dark:bg-stone-900/90 border border-stone-200/80 dark:border-stone-800 mb-5 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
+            <div>
+              <div class="text-xs font-bold text-stone-400 mb-0.5">ملف الأداة المباشر</div>
+              <div class="font-extrabold text-stone-800 dark:text-stone-100 text-base">سكربت راصد العبارات الوصفية (rasid.user.js)</div>
+            </div>
+
+            <a href="rasid.user.js" onclick="mark('s2', true)" class="inline-flex items-center justify-center gap-2.5 bg-gradient-to-l from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-black px-6 py-3.5 rounded-xl shadow-lg shadow-emerald-600/25 hover:-translate-y-0.5 transition-all text-sm sm:text-base shrink-0">
+              <span>⬇️ تثبيت الأداة الآن</span>
+            </a>
+          </div>
+
+          <!-- ميزة التحديث + البديل اليدوي السريع -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
+            <div class="p-3.5 rounded-2xl bg-stone-50 dark:bg-stone-900/50 border border-stone-200/70 dark:border-stone-800 text-xs sm:text-sm">
+              <div class="font-extrabold text-stone-800 dark:text-stone-200 mb-1">🔄 التحديثات تلقائية</div>
+              <p class="text-stone-500 dark:text-stone-400 text-xs leading-relaxed">أي تعديل أو تطوير جديد على الأداة يصل لكل الأجهزة تلقائيًا عن طريق Tampermonkey.</p>
+            </div>
+
+            <div class="p-3.5 rounded-2xl bg-stone-50 dark:bg-stone-900/50 border border-stone-200/70 dark:border-stone-800 text-xs sm:text-sm flex flex-col justify-between">
+              <div class="font-extrabold text-stone-800 dark:text-stone-200 mb-1">🛠️ لم تفتح صفحة التثبيت؟</div>
+              <div class="flex items-center gap-2 mt-1">
+                <button onclick="copyCode()" class="px-3 py-1.5 rounded-lg bg-stone-200 hover:bg-stone-300 dark:bg-stone-800 dark:hover:bg-stone-700 text-xs font-bold transition-colors">
+                  📋 نسخ الكود
+                </button>
+                <button onclick="openModal('toolsModal')" class="text-xs font-bold text-amber-600 dark:text-amber-400 hover:underline">
+                  شرح التثبيت اليدوي
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- أزرار التنقل السفلية -->
+          <div class="pt-4 border-t border-stone-200/70 dark:border-stone-800 flex items-center justify-between">
+            <button onclick="switchTab(1)" class="text-xs sm:text-sm font-bold text-stone-500 hover:text-stone-800 dark:hover:text-stone-200">
+              → الرجوع للخطوة 1
+            </button>
+            <button onclick="switchTab(3)" class="inline-flex items-center gap-2 text-sm font-extrabold text-amber-600 dark:text-amber-400 hover:text-amber-700">
+              <span>طريقة التشغيل (الخطوة 3)</span>
+              <span>←</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- محتوى الخطوة 3: طريقة الاستخدام -->
+        <div id="panel3" class="panel-view">
+          <div class="inline-flex items-center gap-2 px-3 py-1 rounded-lg bg-amber-500/10 text-amber-700 dark:text-amber-400 text-xs font-bold mb-3">
+            <span>🚀 جاهز للانطلاق</span>
+            <span>•</span>
+            <span>4 خطوات بسيطة داخل البوابة</span>
+          </div>
+
+          <h3 class="text-2xl sm:text-3xl font-black text-stone-900 dark:text-white mb-4">
+            كيف تستخدم الأداة؟
+          </h3>
+
+          <!-- مسار الاستخدام المرئي -->
+          <div class="space-y-3 mb-5">
+            <div class="flex items-center gap-3.5 p-3.5 rounded-2xl bg-stone-50 dark:bg-stone-900/70 border border-stone-200/70 dark:border-stone-800">
+              <span class="w-8 h-8 rounded-xl bg-stone-900 dark:bg-amber-500 text-white dark:text-stone-950 font-black text-sm flex items-center justify-center shrink-0">1</span>
+              <p class="text-sm text-stone-700 dark:text-stone-200">افتح <b>البوابة التعليمية</b> ← <b>إدخال الدرجات</b>، واختر الصف والمادة والاختبار والشعبة ثم اضغط <b>«عرض»</b>.</p>
+            </div>
+
+            <div class="flex items-center gap-3.5 p-3.5 rounded-2xl bg-stone-50 dark:bg-stone-900/70 border border-stone-200/70 dark:border-stone-800">
+              <span class="w-8 h-8 rounded-xl bg-stone-900 dark:bg-amber-500 text-white dark:text-stone-950 font-black text-sm flex items-center justify-center shrink-0">2</span>
+              <p class="text-sm text-stone-700 dark:text-stone-200">ستظهر لوحة <b>«راصد العبارات الوصفية»</b> أسفل يسار الصفحة — اضغط <b>«➕ رفع ملف إكسل جديد»</b>.</p>
+            </div>
+
+            <div class="flex items-center gap-3.5 p-3.5 rounded-2xl bg-stone-50 dark:bg-stone-900/70 border border-stone-200/70 dark:border-stone-800">
+              <span class="w-8 h-8 rounded-xl bg-stone-900 dark:bg-amber-500 text-white dark:text-stone-950 font-black text-sm flex items-center justify-center shrink-0">3</span>
+              <p class="text-sm text-stone-700 dark:text-stone-200">تختار الأداة ورقة الشعبة تلقائيًا، اضغط <b>«▶️ رصد العبارات»</b> وراجع المربعات المظللة.</p>
+            </div>
+
+            <div class="flex items-center gap-3.5 p-3.5 rounded-2xl bg-stone-50 dark:bg-stone-900/70 border border-stone-200/70 dark:border-stone-800">
+              <span class="w-8 h-8 rounded-xl bg-stone-900 dark:bg-amber-500 text-white dark:text-stone-950 font-black text-sm flex items-center justify-center shrink-0">4</span>
+              <p class="text-sm text-stone-700 dark:text-stone-200">اضغط <b>«حفظ»</b> أسفل صفحة البوابة. الملف يبقى محفوظًا في الأداة للشعب الأخرى.</p>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-3 p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/25 text-xs sm:text-sm text-amber-900 dark:text-amber-200 mb-5">
+            <span>🎨</span>
+            <span><b>ملاحظة مهمة:</b> الأخضر = مطابقة تامة، البرتقالي = مطابقة تقريبية (راجعها)، الأحمر = الطالب غير موجود في الإكسل. اكتب في رأس عمود العبارات كلمة <b>«العبارات الوصفية»</b>.</span>
+          </div>
+
+          <div class="pt-4 border-t border-stone-200/70 dark:border-stone-800 flex items-center justify-between">
+            <button onclick="switchTab(2)" class="text-xs sm:text-sm font-bold text-stone-500 hover:text-stone-800 dark:hover:text-stone-200">
+              → الرجوع للخطوة 2
+            </button>
+            <span class="text-xs font-bold text-emerald-600 dark:text-emerald-400">✓ جاهز للعمل</span>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
+  </main>
+
+  <!-- نافذة منبثقة (Modal) للتثبيت اليدوي وإعدادات الفنيين -->
+  <div id="toolsModal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+    <div class="bg-white dark:bg-charcoal border border-stone-200 dark:border-stone-800 rounded-3xl max-w-xl w-full p-6 sm:p-7 shadow-2xl relative animate-[slideFade_0.25s_ease-out]">
+      
+      <div class="flex items-center justify-between pb-4 mb-5 border-b border-stone-200 dark:border-stone-800">
+        <h3 class="text-lg font-black text-stone-900 dark:text-white">🛠️ التثبيت اليدوي وإعدادات الفنيين</h3>
+        <button onclick="closeModal('toolsModal')" class="w-8 h-8 rounded-xl bg-stone-100 dark:bg-stone-800 text-stone-500 hover:text-stone-900 dark:hover:text-white flex items-center justify-center font-bold">
+          ✕
+        </button>
+      </div>
+
+      <div class="space-y-5 text-sm">
+        <!-- قسم التثبيت اليدوي -->
+        <div class="p-4 rounded-2xl bg-stone-50 dark:bg-stone-900/80 border border-stone-200/80 dark:border-stone-800">
+          <h4 class="font-extrabold text-stone-900 dark:text-white mb-2">1) لم تظهر صفحة التثبيت في الخطوة 2؟ ثبّتها يدويًا:</h4>
+          <ol class="list-decimal list-inside space-y-1.5 text-stone-600 dark:text-stone-300 text-xs sm:text-sm mb-4">
+            <li>اضغط زر <b>«نسخ الكود»</b> بالأسفل.</li>
+            <li>اضغط أيقونة Tampermonkey في شريط المتصفح ← <b>«إنشاء سكربت جديد»</b>.</li>
+            <li>احذف كل المحتوى الموجود، والصق الكود (<kbd class="px-1.5 py-0.5 rounded bg-stone-200 dark:bg-stone-800 font-mono text-xs">Ctrl+V</kbd>)، ثم احفظ (<kbd class="px-1.5 py-0.5 rounded bg-stone-200 dark:bg-stone-800 font-mono text-xs">Ctrl+S</kbd>).</li>
+          </ol>
+          <div class="flex flex-wrap gap-2.5">
+            <button onclick="copyCode()" class="inline-flex items-center gap-2 bg-amber-500 hover:bg-amber-600 text-stone-950 font-black px-4 py-2 rounded-xl text-xs sm:text-sm transition-all">
+              <span>📋 نسخ الكود</span>
+            </button>
+            <a href="rasid.user.js" download class="inline-flex items-center gap-2 bg-stone-200 hover:bg-stone-300 dark:bg-stone-800 dark:hover:bg-stone-700 text-stone-800 dark:text-stone-200 font-bold px-4 py-2 rounded-xl text-xs sm:text-sm transition-all">
+              <span>💾 تنزيل الملف (rasid.user.js)</span>
+            </a>
+          </div>
+        </div>
+
+        <!-- قسم الفنيين -->
+        <div class="p-4 rounded-2xl bg-stone-50 dark:bg-stone-900/80 border border-stone-200/80 dark:border-stone-800">
+          <h4 class="font-extrabold text-stone-900 dark:text-white mb-1.5">2) تجهيز ملف الإكسل</h4>
+          <ul class="space-y-1 text-xs sm:text-sm text-stone-600 dark:text-stone-300">
+            <li>📑 اجعل كل شعبة في ورقة باسمها مثل <b>8.1</b> و <b>8.2</b> لتُختار تلقائيًا.</li>
+            <li>👤 عمود الاسم عنوانه «Student Name» أو «اسم الطالب».</li>
+            <li>✍️ عمود العبارة عنوانه «العبارات الوصفية» — أو اختره يدويًا من اللوحة.</li>
+            <li>🔤 لا مشكلة في «بن» أو اختلاف الهمزات والتاء المربوطة — الأداة تتجاهلها.</li>
+          </ul>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- إشعار منبثق (Toast) -->
+  <div id="toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-stone-900 dark:bg-amber-400 text-white dark:text-stone-950 px-5 py-3 rounded-2xl shadow-2xl font-extrabold text-sm opacity-0 translate-y-3 pointer-events-none transition-all duration-300"></div>
+
+  <script>
+    // إدارة المظهر (الافتراضي نهاري دافئ مع دعم الوضع الداكن الفاخر)
+    function initTheme() {
+      try {
+        const saved = localStorage.getItem('rasid_theme');
+        if (saved === 'dark' || (!saved && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+          document.documentElement.classList.add('dark');
+        } else {
+          document.documentElement.classList.remove('dark');
+        }
+      } catch (e) {}
+    }
+    initTheme();
+
+    function toggleTheme() {
+      const isDark = document.documentElement.classList.toggle('dark');
+      try { localStorage.setItem('rasid_theme', isDark ? 'dark' : 'light'); } catch (e) {}
+    }
+
+    // اختيار اللون (ذهبي افتراضي). «داكن» يفعّل الوضع الليلي، والألوان الأخرى ترجع للنهاري
+    function setColor(c, fromClick) {
+      document.documentElement.setAttribute('data-color', c);
+      try { localStorage.setItem('rasid_color', c); } catch (e) {}
+      document.querySelectorAll('.color-dot').forEach(d => d.classList.toggle('on', d.dataset.c === c));
+      if (fromClick) {
+        const dark = c === 'dark';
+        document.documentElement.classList.toggle('dark', dark);
+        try { localStorage.setItem('rasid_theme', dark ? 'dark' : 'light'); } catch (e) {}
+      }
+    }
+    document.querySelectorAll('.color-dot').forEach(d => d.addEventListener('click', () => setColor(d.dataset.c, true)));
+    setColor(document.documentElement.getAttribute('data-color') || 'gold', false);
+
+    // التبديل بين تبويبات المعالج (Wizard Tabs)
+    function switchTab(num) {
+      [1, 2, 3].forEach(i => {
+        document.getElementById('tabBtn' + i).classList.toggle('active', i === num);
+        document.getElementById('panel' + i).classList.toggle('active', i === num);
       });
-    });
-  }
+    }
 
-  // --- 3) قراءة النص ---
-  let cachedVoices=[];
-  function loadVoices(){function set(){cachedVoices=speechSynthesis.getVoices()} set(); speechSynthesis.onvoiceschanged=set;}
-  function speak(text){if(!('speechSynthesis' in window)) return; speechSynthesis.cancel(); const u=new SpeechSynthesisUtterance(text);u.lang='ar-SA';u.rate=.95;u.pitch=1.0;const ar=cachedVoices.filter(v=>(v.lang||'').toLowerCase().startsWith('ar'));if(ar.length)u.voice=ar[0];speechSynthesis.speak(u);}
+    // فتح وإغلاق النافذة المنبثقة
+    function openModal(id) {
+      const m = document.getElementById(id);
+      m.classList.remove('hidden');
+      m.classList.add('flex');
+    }
+    function closeModal(id) {
+      const m = document.getElementById(id);
+      m.classList.add('hidden');
+      m.classList.remove('flex');
+    }
 
-  // --- 4) تجميع وإرسال ---
-  function collectForSheet(){
-    const rows=[]; const stamp=new Date().toLocaleString('ar-EG');
-    data.forEach((item,i)=>{
-      const name=`q${i+1}`; const ans=document.querySelector(`input[name="${name}"]:checked`);
-      rows.push({q:item.q, a: ans? ans.value : ''});
-    });
-    return {stamp, ua:navigator.userAgent||'', data:rows};
-  }
+    // إشعارات Toast
+    const toast = (msg) => {
+      const el = document.getElementById('toast');
+      el.textContent = msg;
+      el.classList.remove('opacity-0', 'translate-y-3');
+      el.classList.add('opacity-100', 'translate-y-0');
+      setTimeout(() => {
+        el.classList.remove('opacity-100', 'translate-y-0');
+        el.classList.add('opacity-0', 'translate-y-3');
+      }, 2600);
+    };
 
-  async function sendToSheet(){
-    const status=document.getElementById('status');
-    const btn=document.getElementById('sendBtn');
-    const form=document.getElementById('quizForm');
-    btn.disabled=true; status.textContent="⏳ جاري الإرسال...";
+    // تحديث حالة الإنجاز والحلقة الدائرية
+    function refreshProgress() {
+      let s1 = false, s2 = false;
+      try {
+        s1 = !!localStorage.getItem('rasid_s1');
+        s2 = !!localStorage.getItem('rasid_s2');
+      } catch (e) {}
 
-    // تحقق أن كل الأسئلة مُجاب عليها
-    for(let i=1;i<=data.length;i++){ if(!document.querySelector(`input[name="q${i}"]:checked`)){ status.textContent="⚠️ رجاءً أجب على جميع الأسئلة قبل الإرسال."; btn.disabled=false; return; } }
+      // تحديث أزرار التبويبات
+      document.getElementById('tabBtn1').classList.toggle('done', s1);
+      document.getElementById('check1').classList.toggle('hidden', !s1);
+      document.getElementById('check1').classList.toggle('inline-flex', s1);
 
-    try{
-      const payload=collectForSheet();
-      const res=await fetch(SHEET_ENDPOINT,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)});
-      if(!res.ok){ status.textContent="❌ تعذّر الحفظ: HTTP "+res.status+" - "+res.statusText; btn.disabled=false; return; }
-      let ok=false; try{ const j=await res.json(); ok=!!j.ok; }catch(_ ){ ok=true; } // بعض النشرات ترجع نصًا فقط
-      if(ok){ status.textContent="✅ تم الإرسال وحُفظ في الجدول."; form.reset(); window.scrollTo({top:0,behavior:'smooth'}); }
-      else { status.textContent="❌ لم يؤكّد الخادم الحفظ. افحص إعدادات النشر."; }
-    }catch(err){
-      // fallback في حال فتح الملف محليًا file://
-      try{ await fetch(SHEET_ENDPOINT,{method:"POST",mode:"no-cors",body:JSON.stringify(collectForSheet())}); status.textContent="✅ تم الإرسال (وضع توافق). افحص الجدول للتأكد من وصول الرد."; form.reset(); }
-      catch(e2){ status.textContent="❌ تعذّر الاتصال: "+String(err); }
-    }finally{ btn.disabled=false; }
-  }
+      document.getElementById('tabBtn2').classList.toggle('done', s2);
+      document.getElementById('check2').classList.toggle('hidden', !s2);
+      document.getElementById('check2').classList.toggle('inline-flex', s2);
 
-  // --- 5) تهيئة ---
-  function init(){ render(); loadVoices(); document.getElementById('sendBtn').addEventListener('click',sendToSheet); }
-  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',init); else init();
-</script>
+      // حساب النسبة للحلقة الدائرية
+      const doneCount = (s1 ? 1 : 0) + (s2 ? 1 : 0);
+      const pct = doneCount * 50;
+      const circumference = 94.2;
+      const offset = circumference - (pct / 100) * circumference;
+
+      document.getElementById('ringCircle').style.strokeDashoffset = offset;
+      document.getElementById('ringText').textContent = pct + '%';
+
+      const statusLabel = document.getElementById('statusLabel');
+      const resetBtn = document.getElementById('resetBtn');
+
+      if (doneCount === 0) {
+        statusLabel.textContent = 'ابدأ بالخطوة 1';
+        statusLabel.className = 'text-xs font-bold text-amber-300 mt-0.5';
+        resetBtn.classList.add('hidden');
+      } else if (doneCount === 1) {
+        statusLabel.textContent = 'بقيت خطوة واحدة';
+        statusLabel.className = 'text-xs font-bold text-amber-300 mt-0.5';
+        resetBtn.classList.remove('hidden');
+      } else {
+        statusLabel.textContent = 'مكتمل وجاهز ✓';
+        statusLabel.className = 'text-xs font-bold text-emerald-400 mt-0.5';
+        resetBtn.classList.remove('hidden');
+      }
+    }
+
+    function mark(id, autoAdvance) {
+      try { localStorage.setItem('rasid_' + id, '1'); } catch (e) {}
+      refreshProgress();
+      if (autoAdvance && id === 's1') {
+        setTimeout(() => switchTab(2), 600);
+      } else if (autoAdvance && id === 's2') {
+        setTimeout(() => switchTab(3), 600);
+      }
+    }
+
+    function resetProgress() {
+      try {
+        localStorage.removeItem('rasid_s1');
+        localStorage.removeItem('rasid_s2');
+      } catch (e) {}
+      refreshProgress();
+      switchTab(1);
+      toast('🔄 تمت إعادة ضبط خطوات التثبيت');
+    }
+
+    // تهيئة الحالة عند فتح الصفحة
+    refreshProgress();
+    try {
+      if (localStorage.getItem('rasid_s1') && !localStorage.getItem('rasid_s2')) {
+        switchTab(2);
+      } else if (localStorage.getItem('rasid_s1') && localStorage.getItem('rasid_s2')) {
+        switchTab(3);
+      }
+    } catch (e) {}
+
+    // المتصفح: يُحدَّد تلقائيًا ويمكن تغييره يدويًا
+    const BROWSERS = {
+      firefox: { url: 'https://addons.mozilla.org/ar/firefox/addon/tampermonkey/', name: 'Firefox', add: '«أضف إلى Firefox»', add2: '«أضف»', ext: '' },
+      chrome:  { url: 'https://chromewebstore.google.com/detail/tampermonkey/dhdgffkkebhmkfjojejmpbldmpobfkfo', name: 'Chrome', add: '«إضافة إلى Chrome»', add2: '«إضافة الإضافة»', ext: 'chrome://extensions' },
+      edge:    { url: 'https://microsoftedge.microsoft.com/addons/detail/tampermonkey/iikmkjmpaadaobahmlepeloendndfphd', name: 'Edge', add: '«الحصول على» (Get)', add2: '«إضافة ملحق»', ext: 'edge://extensions' },
+    };
+    function detectBrowser() {
+      const ua = navigator.userAgent;
+      if (/Edg\//.test(ua)) return 'edge';
+      if (/Firefox\//.test(ua)) return 'firefox';
+      if (/Chrome\//.test(ua)) return 'chrome';
+      return 'firefox';
+    }
+    function setBrowser(k) {
+      const b = BROWSERS[k];
+      const link = document.getElementById('tmLink');
+      link.href = b.url;
+      link.querySelector('span').textContent = '🧩 تثبيت Tampermonkey لـ ' + b.name;
+      document.getElementById('browserDetectedTitle').textContent = 'إضافة Tampermonkey لمتصفح ' + b.name;
+      document.getElementById('tmAddLabel').textContent = b.add;
+      document.getElementById('tmAddLabel2').textContent = b.add2;
+      document.getElementById('chromiumBox').classList.toggle('hidden', k === 'firefox');
+      document.getElementById('chromeSteps').classList.toggle('hidden', k !== 'chrome');
+      document.getElementById('edgeSteps').classList.toggle('hidden', k !== 'edge');
+      document.getElementById('extUrl').textContent = b.ext;
+      document.querySelectorAll('.br-btn').forEach(x => {
+        const on = x.dataset.br === k;
+        x.classList.toggle('bg-amber-500', on); x.classList.toggle('text-white', on); x.classList.toggle('border-transparent', on);
+        x.classList.toggle('bg-stone-50', !on); x.classList.toggle('dark:bg-stone-900', !on);
+      });
+    }
+    async function copyExtUrl() {
+      const t = document.getElementById('extUrl').textContent;
+      try {
+        if (navigator.clipboard && navigator.clipboard.writeText) await navigator.clipboard.writeText(t);
+        else { const ta = document.createElement('textarea'); ta.value = t; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove(); }
+        toast('✅ تم النسخ — الصقه في شريط العنوان');
+      } catch (e) { toast('اكتب العنوان يدويًا: ' + t); }
+    }
+    setBrowser(detectBrowser());
+
+    // قراءة الإصدار والكود من ملف السكربت
+    let code = '';
+    fetch('rasid.user.js', { cache: 'no-store' })
+      .then(r => r.text())
+      .then(t => {
+        code = t;
+        const m = t.match(/@version\s+([\d.]+)/);
+        if (m) document.getElementById('ver').textContent = 'الإصدار ' + m[1];
+      })
+      .catch(() => {
+        document.getElementById('ver').style.display = 'none';
+      });
+
+    // نسخ الكود للحافظة
+    async function copyCode() {
+      try {
+        if (!code) {
+          code = await (await fetch('rasid.user.js', { cache: 'no-store' })).text();
+        }
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          await navigator.clipboard.writeText(code);
+        } else {
+          const ta = document.createElement('textarea');
+          ta.value = code;
+          document.body.appendChild(ta);
+          ta.select();
+          document.execCommand('copy');
+          document.body.removeChild(ta);
+        }
+        toast('✅ تم نسخ الكود بنجاح');
+      } catch (e) {
+        toast('⚠️ تعذّر النسخ — استخدم زر «تنزيل الملف»');
+      }
+    }
+  </script>
 </body>
 </html>
